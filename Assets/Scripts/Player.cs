@@ -1,0 +1,143 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class Player : MonoBehaviour
+{
+	[Header("References")]
+	[SerializeField, Tooltip("An actual object that rotates (located in a center of the screen)")]
+	private Transform _pivotTransform;
+
+	[SerializeField, Tooltip("The platform that catches notes (must be a child of the pivot)")]
+	private Transform _platformTransform;
+
+	[Header("Platform Settings")]
+	[SerializeField, Range(0.5f, 3.5f), Tooltip("Distance from the pivot center")]
+	private float _radius = 3.5f;
+
+	[SerializeField, Tooltip("Size of the platform (X - width, Y - height)")]
+	private Vector2 _size = new Vector2(3f, 0.4f);
+
+	[Header("Input Settings")]
+	[SerializeField, Range(0.01f, 0.5f)]
+	private float _sensitivity = 0.2f;
+
+	[SerializeField]
+	private bool _isInverted = true;
+
+	private InputSystem_Actions _inputActions;
+
+	/// <summary>
+	/// Used in IsPlatformAlignedWithNote method
+	/// </summary>
+	private float _cosThreshold;
+
+	public float Radius
+	{
+		get { return _radius; }
+	}
+
+	private void CalculateHalfAngularWidth()
+	{
+		float halfAngle = (_size.x / _radius) * 0.5f;
+
+		// Subtract 2 degrees so the note should more face the platform
+		halfAngle -= 2f * Mathf.Deg2Rad;
+
+		_cosThreshold = Mathf.Cos(halfAngle);
+	}
+
+	private void RotateByUserInput()
+	{
+		int rotationInvertedMultiplier = _isInverted ? -1 : 1;
+		float finalRotationDelta = _inputActions.Player.Move.ReadValue<Vector2>().x * _sensitivity * rotationInvertedMultiplier;
+		_pivotTransform.Rotate(0f, 0f, finalRotationDelta);
+	}
+
+	private void HandleNotePress()
+	{
+		// TODO: make it allow any key press after removing creating Notes with specific key (because these two features conflict with themselves)
+		// if (!_inputActions.Player.Press.IsPressed())
+		if (!Keyboard.current.spaceKey.wasPressedThisFrame)
+			return;
+
+		Note[] activeNotes = FindObjectsByType<Note>(FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
+		Note closestNote = null;
+		float closestProgressDiff = float.MaxValue;
+
+		// Find a note that is the closest to the Player
+		foreach (Note note in activeNotes)
+		{
+			if (!IsPlatformAlignedWithNote(note))
+				continue;
+
+			float diff = Mathf.Abs(1f - note.Progress);
+			if (diff < closestProgressDiff)
+			{
+				closestProgressDiff = diff;
+				closestNote = note;
+			}
+		}
+
+		if (!closestNote)
+			return;
+
+		HitGrade grade = closestNote.RateHit();
+		Debug.Log(grade);
+		if (grade != HitGrade.Miss)
+			Destroy(closestNote.gameObject);
+	}
+
+	private bool IsPlatformAlignedWithNote(Note note)
+	{
+		Vector2 playerDirection = (_platformTransform.position - _pivotTransform.position).normalized;
+		Vector2 noteDirection = (note.transform.position - _pivotTransform.position).normalized;
+
+		float dot = Vector2.Dot(noteDirection, playerDirection);
+		return dot >= _cosThreshold;
+	}
+
+	private void OnValidate()
+	{
+		if (_platformTransform != null)
+		{
+			// Move away from center (pivot)
+			_platformTransform.localPosition = new Vector3(0f, _radius, 0f);
+			_platformTransform.localScale = new Vector3(_size.x, _size.y, 1f);
+		}
+	}
+
+	private void Awake()
+	{
+		if (!_pivotTransform)
+		{
+			Debug.LogWarning("_pivotTransform is null. Falling back to current GameObject's Transform");
+			_pivotTransform = transform;
+		}
+
+		_inputActions = new InputSystem_Actions();
+	}
+
+	private void OnEnable()
+	{
+		_inputActions?.Enable();
+	}
+
+	private void OnDisable()
+	{
+		_inputActions?.Disable();
+	}
+
+	private void Start()
+	{
+		Cursor.visible = false;
+		Cursor.lockState = CursorLockMode.Locked;
+
+		CalculateHalfAngularWidth();
+	}
+
+	private void Update()
+	{
+		RotateByUserInput();
+		HandleNotePress();
+	}
+}
