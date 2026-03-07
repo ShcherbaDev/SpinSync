@@ -34,6 +34,8 @@ public class Player : MonoBehaviour
 	/// </summary>
 	private float _cosThreshold;
 
+	public System.Action<Note, NoteGrade> OnHitDetected;
+
 	public float Radius
 	{
 		get { return _radius; }
@@ -81,10 +83,13 @@ public class Player : MonoBehaviour
 		if (!closestNote)
 			return;
 
-		HitGrade grade = closestNote.RateHit();
+		NoteGrade grade = closestNote.RateHit();
 		Debug.Log(grade);
-		if (grade != HitGrade.Miss)
+		if (grade != NoteGrade.Miss)
+		{
+			OnHitDetected?.Invoke(closestNote, grade);
 			Destroy(closestNote.gameObject);
+		}
 	}
 
 	private bool IsPlatformAlignedWithNote(Note note)

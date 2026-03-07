@@ -24,6 +24,8 @@ public class DebugNoteSpawner : MonoBehaviour
 	[SerializeField, Range(0f, 360f)]
 	private float _specificAngle;
 
+	public System.Action<Note> OnNoteSpawned;
+
 	private void SpawnNote()
 	{
 		if (!_notePrefab)
@@ -37,6 +39,8 @@ public class DebugNoteSpawner : MonoBehaviour
 
 		Note spawnedNote = Instantiate(_notePrefab, spawnPos, Quaternion.identity);
 		spawnedNote.Init(_travelDuration, _targetRadius, angle);
+
+		OnNoteSpawned?.Invoke(spawnedNote);
 	}
 
 	private void Start()

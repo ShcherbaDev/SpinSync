@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public enum HitGrade
+public enum NoteGrade
 {
-	None, Miss, Bad, Good, Perfect
+	Miss, Bad, Good, Perfect
 }
 
 public class Note : MonoBehaviour
@@ -12,6 +12,8 @@ public class Note : MonoBehaviour
 	[SerializeField] private float _targetRadius;
 	[SerializeField] private Vector2 _direction;
 
+	public System.Action<Note, NoteGrade> OnNoteFinished;
+	
 	public float Progress
 	{
 		get { return (Time.time - _spawnTime) / _travelDuration; }
@@ -28,16 +30,15 @@ public class Note : MonoBehaviour
 		transform.up = _direction;
 	}
 
-	// TODO: move to somewhere else
-	public HitGrade RateHit()
+	public NoteGrade RateHit()
 	{
 		return Progress switch
 		{
-			< 0.5f => HitGrade.Miss,
-			<= 0.7f => HitGrade.Bad,
-			<= 0.85f => HitGrade.Good,
-			<= 1.1f => HitGrade.Perfect,
-			_ => HitGrade.None
+			< 0.6f => NoteGrade.Miss,
+			<= 0.7f => NoteGrade.Bad,
+			<= 0.85f => NoteGrade.Good,
+			<= 1.1f => NoteGrade.Perfect,
+			_ => NoteGrade.Miss
 		};
 	}
 
@@ -47,7 +48,7 @@ public class Note : MonoBehaviour
 
 		if (Progress >= 1.2f)
 		{
-			Debug.Log("Miss (too late)");
+			OnNoteFinished?.Invoke(this, NoteGrade.Miss);
 			Destroy(gameObject);
 		}
 	}
