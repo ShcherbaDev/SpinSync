@@ -27,7 +27,9 @@ public class Note : MonoBehaviour
 
 		float angleRadian = angleDegrees * Mathf.Deg2Rad;
 		_direction = new Vector2(Mathf.Sin(angleRadian), Mathf.Cos(angleRadian)).normalized;
-		transform.up = _direction;
+
+		// Unnecessary for circle sprites:
+		// transform.up = _direction;
 	}
 
 	public NoteGrade RateHit()

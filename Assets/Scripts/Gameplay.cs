@@ -1,6 +1,14 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+
+[System.Serializable]
+public class NoteGradeToScoreMapping
+{
+	public NoteGrade Grade;
+	public int Score;
+}
 
 public class Gameplay : MonoBehaviour
 {
@@ -10,6 +18,7 @@ public class Gameplay : MonoBehaviour
 
 	[Header("UI")]
 	[SerializeField] private TextMeshProUGUI _scoreText;
+	[SerializeField, Min(1)] private int _maxAmountOfScoreDigits = 7;
 	[SerializeField] private TextMeshProUGUI _comboText;
 
 	[Header("Health (UI)")]
@@ -27,7 +36,11 @@ public class Gameplay : MonoBehaviour
 	[SerializeField] private AudioClip _missSound;
 
 	[Header("Combo")]
-	[SerializeField] private int _combo;
+	[SerializeField] private int _currentCombo;
+
+	[Header("Scoring")]
+	[SerializeField] private List<NoteGradeToScoreMapping> _gradeToScoreMapping;
+	[SerializeField] private int _currentScore;
 
 	private void Start()
 	{
@@ -59,16 +72,18 @@ public class Gameplay : MonoBehaviour
 		if (grade == NoteGrade.Miss)
 		{
 			_currentLives--;
-			_combo = 0;
+			_currentCombo = 0;
 			_audioSource.PlayOneShot(_missSound);
 			UpdateHealthBar();
 		}
 		else
 		{
-			_combo++;
+			_currentCombo++;
 			_audioSource.PlayOneShot(_hitSound);
 		}
-		
+
+		_currentScore += _gradeToScoreMapping.Find(item => item.Grade == grade).Score;
+		UpdateScoreText();
 		UpdateComboText();
 
 		if (_currentLives <= 0)
@@ -78,9 +93,14 @@ public class Gameplay : MonoBehaviour
 		}
 	}
 
+	private void UpdateScoreText()
+	{
+		_scoreText.text = _currentScore.ToString().PadLeft(_maxAmountOfScoreDigits, '0');
+	}
+
 	private void UpdateComboText()
 	{
-		_comboText.text = $"{_combo}x";
+		_comboText.text = $"{_currentCombo}x";
 	}
 
 	private void UpdateHealthBar()
