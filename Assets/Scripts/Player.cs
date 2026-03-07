@@ -10,12 +10,15 @@ public class Player : MonoBehaviour
 	[SerializeField, Tooltip("The platform that catches notes (must be a child of the pivot)")]
 	private Transform _platformTransform;
 
+	[SerializeField]
+	private SpriteRenderer _spriteRenderer;
+
 	[Header("Platform Settings")]
-	[SerializeField, Range(0.5f, 3.5f), Tooltip("Distance from the pivot center")]
+	[SerializeField, Min(0.5f), Tooltip("Distance from the pivot center")]
 	private float _radius = 3.5f;
 
 	[SerializeField, Tooltip("Size of the platform (X - width, Y - height)")]
-	private Vector2 _size = new Vector2(3f, 0.4f);
+	private Vector2 _scale = new Vector2(1f, 1f);
 
 	[Header("Input Settings")]
 	[SerializeField, Range(0.01f, 0.5f)]
@@ -38,11 +41,8 @@ public class Player : MonoBehaviour
 
 	private void CalculateHalfAngularWidth()
 	{
-		float halfAngle = (_size.x / _radius) * 0.5f;
-
-		// Subtract 2 degrees so the note should more face the platform
-		halfAngle -= 2f * Mathf.Deg2Rad;
-
+		float horizontalSize = _spriteRenderer.bounds.size.x * _scale.x;
+		float halfAngle = (horizontalSize / _radius) * 0.5f;
 		_cosThreshold = Mathf.Cos(halfAngle);
 	}
 
@@ -102,7 +102,7 @@ public class Player : MonoBehaviour
 		{
 			// Move away from center (pivot)
 			_platformTransform.localPosition = new Vector3(0f, _radius, 0f);
-			_platformTransform.localScale = new Vector3(_size.x, _size.y, 1f);
+			_platformTransform.localScale = new Vector3(_scale.x, _scale.y, 1f);
 		}
 	}
 
