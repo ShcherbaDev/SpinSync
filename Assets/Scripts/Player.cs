@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
@@ -57,9 +56,7 @@ public class Player : MonoBehaviour
 
 	private void HandleNotePress()
 	{
-		// TODO: make it allow any key press after removing creating Notes with specific key (because these two features conflict with themselves)
-		// if (!_inputActions.Player.Press.IsPressed())
-		if (!Keyboard.current.spaceKey.wasPressedThisFrame)
+		if (!_inputActions.Player.Press.WasPressedThisFrame())
 			return;
 
 		Note[] activeNotes = FindObjectsByType<Note>(FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);

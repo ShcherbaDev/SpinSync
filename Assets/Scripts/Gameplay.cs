@@ -12,11 +12,14 @@ public class NoteGradeToScoreMapping
 
 public class Gameplay : MonoBehaviour
 {
-	[SerializeField] private Player _player;
-	[SerializeField] private DebugNoteSpawner _spawner;
-	[SerializeField] private AudioSource _audioSource;
+	[SerializeField] private LevelData _levelData;
 
-	[Header("UI")]
+	[SerializeField] private Player _player;
+	[SerializeField] private NoteSpawner _noteSpawner;
+	[SerializeField] private AudioSource _sfxAudioSource;
+	[SerializeField] private AudioSource _musicAudioSource;
+
+	[Header("UI Texts")]
 	[SerializeField] private TextMeshProUGUI _scoreText;
 	[SerializeField, Min(1)] private int _maxAmountOfScoreDigits = 7;
 	[SerializeField] private TextMeshProUGUI _comboText;
@@ -46,18 +49,28 @@ public class Gameplay : MonoBehaviour
 	{
 		_currentLives = _numberOfLives;
 		UpdateHealthBar();
+
+		if (!_levelData || !_levelData.Song)
+		{
+			Debug.Log("Level and/or song is not set");
+			return;
+		}
+
+		_musicAudioSource.clip = _levelData.Song;
+		_musicAudioSource.Play();
+		_noteSpawner.StartLevel(_levelData, _musicAudioSource);
 	}
 
 	private void OnEnable()
 	{
 		_player.OnHitDetected += ProcessNoteResult;
-		_spawner.OnNoteSpawned += SubscribeToNote;
+		_noteSpawner.OnNoteSpawned += SubscribeToNote;
 	}
 
 	private void OnDisable()
 	{
 		_player.OnHitDetected -= ProcessNoteResult;
-		_spawner.OnNoteSpawned -= SubscribeToNote;
+		_noteSpawner.OnNoteSpawned -= SubscribeToNote;
 	}
 
 	private void SubscribeToNote(Note note)
@@ -73,13 +86,13 @@ public class Gameplay : MonoBehaviour
 		{
 			_currentLives--;
 			_currentCombo = 0;
-			_audioSource.PlayOneShot(_missSound);
+			_sfxAudioSource.PlayOneShot(_missSound);
 			UpdateHealthBar();
 		}
 		else
 		{
 			_currentCombo++;
-			_audioSource.PlayOneShot(_hitSound);
+			_sfxAudioSource.PlayOneShot(_hitSound);
 		}
 
 		_currentScore += _gradeToScoreMapping.Find(item => item.Grade == grade).Score;
