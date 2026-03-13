@@ -1,64 +1,56 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 public class NoteSpawner : MonoBehaviour
 {
 	[Header("Settings")]
 	[SerializeField] private Note _notePrefab;
 	[SerializeField] private Player _player;
+	[SerializeField] private PlayableDirector _director;
+	[SerializeField] private float _noteTravelDuration = 0.5f;
 
 	public System.Action<Note> OnNoteSpawned;
 
-	private LevelData _currentLevel;
-	private AudioSource _audioSource;
+	private List<NoteMarker> _pendingMarkers = new List<NoteMarker>();
+	private int _nextMarkerIndex;
 
-	private int _nextNoteIndex;
-	private bool _isLevelRunning;
-
-	public void StartLevel(LevelData levelData, AudioSource audioSource)
+	private void Start()
 	{
-		_currentLevel = levelData;
-		_audioSource = audioSource;
-
-		if (!_currentLevel || !_currentLevel.Song)
-		{
-			Debug.LogError("No song set");
+		TimelineAsset timeline = _director.playableAsset as TimelineAsset;
+		if (timeline == null)
 			return;
+
+		foreach (IMarker marker in timeline.markerTrack.GetMarkers())
+		{
+			if (marker is NoteMarker noteMarker)
+				_pendingMarkers.Add(noteMarker);
 		}
 
-		_nextNoteIndex = 0;
-		_isLevelRunning = true;
+		_pendingMarkers.Sort((a, b) => a.time.CompareTo(b.time));
 	}
 
 	private void Update()
 	{
-		if (!_isLevelRunning)
-			return;
-
-		float currentTime = _audioSource.time;
-
-		// Check whether it's time to spawn a next Note
-		while (_nextNoteIndex < _currentLevel.Notes.Count)
+		while (_nextMarkerIndex < _pendingMarkers.Count)
 		{
-			NoteData data = _currentLevel.Notes[_nextNoteIndex];
+			NoteMarker marker = _pendingMarkers[_nextMarkerIndex];
 
-			float spawnTriggerTime = data.HitTimeSeconds - _currentLevel.NoteTravelDuration;
-
-			if (currentTime >= spawnTriggerTime)
+			if ((float)_director.time >= (float)marker.time - _noteTravelDuration)
 			{
-				SpawnNote(data);
-				_nextNoteIndex++;
+				SpawnNote(marker.Angle);
+				_nextMarkerIndex++;
 			}
 			else
-			{
 				break;
-			}
 		}
 	}
 
-	private void SpawnNote(NoteData note)
+	private void SpawnNote(float angle)
 	{
 		Note newNote = Instantiate(_notePrefab, Vector3.zero, Quaternion.identity);
-		newNote.Init(_currentLevel.NoteTravelDuration, _player.Radius, note.Angle);
+		newNote.Init(_noteTravelDuration, _player.Radius, angle);
 		OnNoteSpawned?.Invoke(newNote);
 	}
 }

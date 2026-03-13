@@ -13,7 +13,7 @@ public class Note : MonoBehaviour
 	[SerializeField] private Vector2 _direction;
 
 	public System.Action<Note, NoteGrade> OnNoteFinished;
-	
+
 	public float Progress
 	{
 		get { return (Time.time - _spawnTime) / _travelDuration; }
@@ -28,8 +28,7 @@ public class Note : MonoBehaviour
 		float angleRadian = angleDegrees * Mathf.Deg2Rad;
 		_direction = new Vector2(Mathf.Sin(angleRadian), Mathf.Cos(angleRadian)).normalized;
 
-		// Unnecessary for circle sprites:
-		// transform.up = _direction;
+		transform.up = _direction;
 	}
 
 	public NoteGrade RateHit()

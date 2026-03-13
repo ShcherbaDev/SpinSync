@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Playables;
 using UnityEngine.UI;
 
 [System.Serializable]
@@ -12,12 +13,11 @@ public class NoteGradeToScoreMapping
 
 public class Gameplay : MonoBehaviour
 {
-	[SerializeField] private LevelData _levelData;
+	[SerializeField] private PlayableDirector _director;
 
 	[SerializeField] private Player _player;
 	[SerializeField] private NoteSpawner _noteSpawner;
 	[SerializeField] private AudioSource _sfxAudioSource;
-	[SerializeField] private AudioSource _musicAudioSource;
 
 	[Header("UI Texts")]
 	[SerializeField] private TextMeshProUGUI _scoreText;
@@ -50,15 +50,7 @@ public class Gameplay : MonoBehaviour
 		_currentLives = _numberOfLives;
 		UpdateHealthBar();
 
-		if (!_levelData || !_levelData.Song)
-		{
-			Debug.Log("Level and/or song is not set");
-			return;
-		}
-
-		_musicAudioSource.clip = _levelData.Song;
-		_musicAudioSource.Play();
-		_noteSpawner.StartLevel(_levelData, _musicAudioSource);
+		_director.Play();
 	}
 
 	private void OnEnable()
