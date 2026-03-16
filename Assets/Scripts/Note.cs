@@ -12,7 +12,8 @@ public class Note : MonoBehaviour
 	[SerializeField] private float _targetRadius;
 	[SerializeField] private Vector2 _direction;
 
-	[SerializeField] private SpriteRenderer _spriteRenderer;
+	[SerializeField] private SpriteRenderer _outlineSpriteRenderer;
+	[SerializeField] private SpriteRenderer _backgroundSpriteRenderer;
 
 	public System.Action<Note, NoteGrade> OnNoteFinished;
 
@@ -23,10 +24,9 @@ public class Note : MonoBehaviour
 
 	private void Start()
 	{
-		// Hide the sprite - it shows up smoothly on changing Progress
-		Color transparent = _spriteRenderer.color;
-		transparent.a = 0;
-		_spriteRenderer.color = transparent;
+		// Hide the sprites - they show up smoothly on changing Progress
+		SetSpriteAlpha(_outlineSpriteRenderer, 0);
+		SetSpriteAlpha(_backgroundSpriteRenderer, 0);
 	}
 
 	public void Init(float travelDuration, float targetRadius, float angleDegrees)
@@ -58,17 +58,23 @@ public class Note : MonoBehaviour
 		transform.position = _direction * (Progress * _targetRadius);
 		transform.localScale = Vector3.one * Mathf.Lerp(0.5f, 1f, Progress);
 
-		if (_spriteRenderer)
-		{
-			Color newTransparency = _spriteRenderer.color;
-			newTransparency.a = Progress;
-			_spriteRenderer.color = newTransparency;
-		}
+		SetSpriteAlpha(_outlineSpriteRenderer, Progress);
+		SetSpriteAlpha(_backgroundSpriteRenderer, Progress);
 
 		if (Progress >= 1.2f)
 		{
 			OnNoteFinished?.Invoke(this, NoteGrade.Miss);
 			Destroy(gameObject);
 		}
+	}
+
+	private void SetSpriteAlpha(SpriteRenderer spriteRenderer, float alpha)
+	{
+		if (!spriteRenderer)
+			return;
+
+		Color newColor = spriteRenderer.color;
+		newColor.a = alpha;
+		spriteRenderer.color = newColor;
 	}
 }
