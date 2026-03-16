@@ -49,6 +49,7 @@ MonoBehaviour:
   _travelDuration: 0
   _targetRadius: 0
   _direction: {x: 0, y: 0}
+  _spriteRenderer: {fileID: 4086333267194976177}
 --- !u!1 &3018360560003635713
 GameObject:
   m_ObjectHideFlags: 0
