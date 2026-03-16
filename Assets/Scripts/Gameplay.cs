@@ -40,6 +40,7 @@ public class Gameplay : MonoBehaviour
 
 	[Header("Combo")]
 	[SerializeField] private int _currentCombo;
+	[SerializeField] private Color _currentComboColor;
 
 	[Header("Scoring")]
 	[SerializeField] private List<NoteGradeToScoreMapping> _gradeToScoreMapping;
@@ -49,6 +50,8 @@ public class Gameplay : MonoBehaviour
 	{
 		_currentLives = _numberOfLives;
 		UpdateHealthBar();
+
+		_currentComboColor = RandomComboColor();
 
 		_director.Play();
 	}
@@ -68,6 +71,7 @@ public class Gameplay : MonoBehaviour
 	private void SubscribeToNote(Note note)
 	{
 		note.OnNoteFinished += ProcessNoteResult;
+		note.SetComboVisuals(_currentComboColor);
 	}
 
 	private void ProcessNoteResult(Note note, NoteGrade grade)
@@ -78,6 +82,7 @@ public class Gameplay : MonoBehaviour
 		{
 			_currentLives--;
 			_currentCombo = 0;
+			_currentComboColor = RandomComboColor();
 			_sfxAudioSource.PlayOneShot(_missSound);
 			UpdateHealthBar();
 		}
@@ -106,6 +111,11 @@ public class Gameplay : MonoBehaviour
 	private void UpdateComboText()
 	{
 		_comboText.text = $"{_currentCombo}x";
+	}
+
+	private static Color RandomComboColor()
+	{
+		return Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
 	}
 
 	private void UpdateHealthBar()

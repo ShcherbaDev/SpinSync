@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 public enum NoteGrade
@@ -39,6 +40,12 @@ public class Note : MonoBehaviour
 		_direction = new Vector2(Mathf.Sin(angleRadian), Mathf.Cos(angleRadian)).normalized;
 
 		transform.up = _direction;
+	}
+
+	public void SetComboVisuals(Color color)
+	{
+		if (_backgroundSpriteRenderer)
+			_backgroundSpriteRenderer.color = color;
 	}
 
 	public NoteGrade RateHit()
