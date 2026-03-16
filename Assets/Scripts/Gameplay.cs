@@ -117,10 +117,12 @@ public class Gameplay : MonoBehaviour
 
 		for (int i = 0; i < _numberOfLives; i++)
 		{
-			GameObject lifeItem = new GameObject();
+			GameObject lifeItem = new GameObject("LifeItem");
+			lifeItem.transform.SetParent(_healthBarContainer, false);
+
 			Image lifeImage = lifeItem.AddComponent<Image>();
 			lifeImage.sprite = _currentLives > i ? _activeLifeSprite : _lostLifeSprite;
-			Instantiate(lifeItem, _healthBarContainer);
+			lifeImage.color = _healthBarItemsColor;
 		}
 	}
 }
