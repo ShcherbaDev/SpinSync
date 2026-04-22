@@ -46,12 +46,22 @@ public class Gameplay : MonoBehaviour
 	[SerializeField] private List<NoteGradeToScoreMapping> _gradeToScoreMapping;
 	[SerializeField] private int _currentScore;
 
+	private void Awake()
+	{
+		// Must run before NoteSpawner.Start, which caches markers from _director.playableAsset.
+		if (SongSelection.Current != null && SongSelection.Current.Timeline != null)
+			_director.playableAsset = SongSelection.Current.Timeline;
+	}
+
 	private void Start()
 	{
 		_currentLives = _numberOfLives;
 		UpdateHealthBar();
 
 		_currentComboColor = RandomComboColor();
+
+		if (SongSelection.Current != null)
+			Debug.Log($"Gameplay starting with selected song: {SongSelection.Current.Title} by {SongSelection.Current.Artist}");
 
 		_director.Play();
 	}

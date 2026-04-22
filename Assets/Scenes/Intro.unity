@@ -910,7 +910,7 @@ MonoBehaviour:
   _buttonAppearDuration: 0.45
   _buttonAppearStagger: 0.12
   _buttonStartScale: 0.6
-  _gameplaySceneName: Gameplay
+  _gameplaySceneName: LevelSelect
   _faderPrefab: {fileID: 100105, guid: c1c2c3d4e5f6789012345678901234cd, type: 3}
   _quitFadeDuration: 1
 --- !u!1660057539 &9223372036854775807

@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 549dbcb8486647d88c72e641c742a752, type: 3}
-  m_Name: Mission Impossible
+  m_Name: Cooked
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
-  Title: Mission Impossible
-  Artist: Idk
-  BPM: 175
-  Difficulty: 1
-  AccentColor: {r: 0.4, g: 0.7, b: 1, a: 1}
-  Song: {fileID: 8300000, guid: 4f89f740711ede4429a9e7228c65520b, type: 3}
-  PreviewStartTime: 0
+  Title: Cooked
+  Artist: The Grey Room / Golden Palms
+  BPM: 132.3
+  Difficulty: 3
+  AccentColor: {r: 1, g: 0.7772348, b: 0.39999998, a: 1}
+  Song: {fileID: 8300000, guid: 747011fdef8fe4c43981f05f04ea03c3, type: 3}
+  PreviewStartTime: 4
   Timeline: {fileID: 11400000, guid: 3d37154300ec29749aa651707b57a547, type: 2}
   NoteTravelDuration: 2
