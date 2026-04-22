@@ -16,6 +16,8 @@ public class IntroAnimationSequence : MonoBehaviour
 	[SerializeField] private float _logoEndScale = 1f;
 
 	[Header("Background Music")]
+	[SerializeField, Tooltip("If assigned, a random song is picked from this library (falls back to _musicClip if the library is empty)")]
+	private SongLibrary _songLibrary;
 	[SerializeField] private AudioClip _musicClip;
 	[SerializeField, Range(0f, 1f)] private float _musicVolume = 0.7f;
 	[SerializeField, Min(30f)] private float _musicBPM = 120f;
@@ -89,17 +91,50 @@ public class IntroAnimationSequence : MonoBehaviour
 
 	private void StartBackgroundMusic()
 	{
-		if (!_musicClip) return;
+		AudioClip clip = _musicClip;
+		float bpm = _musicBPM;
+
+		if (_songLibrary != null && _songLibrary.Songs != null && _songLibrary.Songs.Count > 0)
+		{
+			LevelData pick = PickRandomSong(_songLibrary);
+			if (pick != null && pick.Song != null)
+			{
+				clip = pick.Song;
+				bpm = pick.BPM;
+			}
+		}
+
+		if (!clip) return;
+
+		_musicBPM = bpm;
 
 		_musicAudioSource = GetComponent<AudioSource>();
 		if (!_musicAudioSource)
 			_musicAudioSource = gameObject.AddComponent<AudioSource>();
 
-		_musicAudioSource.clip = _musicClip;
+		_musicAudioSource.clip = clip;
 		_musicAudioSource.volume = _musicVolume;
 		_musicAudioSource.loop = true;
 		_musicAudioSource.playOnAwake = false;
 		_musicAudioSource.Play();
+	}
+
+	private static LevelData PickRandomSong(SongLibrary library)
+	{
+		for (int attempts = 0; attempts < 8; attempts++)
+		{
+			int index = Random.Range(0, library.Songs.Count);
+			LevelData candidate = library.Songs[index];
+			if (candidate != null && candidate.Song != null)
+				return candidate;
+		}
+
+		foreach (LevelData song in library.Songs)
+		{
+			if (song != null && song.Song != null)
+				return song;
+		}
+		return null;
 	}
 
 	private void StartLogoPulse()

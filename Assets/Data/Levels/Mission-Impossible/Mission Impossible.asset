@@ -16,8 +16,8 @@ MonoBehaviour:
   Artist: Idk
   BPM: 175
   Difficulty: 1
-  AccentColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+  AccentColor: {r: 0.30588236, g: 0.19215687, b: 0.4745098, a: 1}
   Song: {fileID: 8300000, guid: 4f89f740711ede4429a9e7228c65520b, type: 3}
-  PreviewStartTime: 0
+  PreviewStartTime: 3
   Timeline: {fileID: 11400000, guid: 3d37154300ec29749aa651707b57a547, type: 2}
   NoteTravelDuration: 2
