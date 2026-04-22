@@ -1,0 +1,266 @@
+using DG.Tweening;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class GameplayFeedback : MonoBehaviour
+{
+	[Header("Platform")]
+	[SerializeField] private Transform _platformTransform;
+	[SerializeField] private SpriteRenderer _platformSprite;
+
+	[Header("Hit Spark")]
+	[SerializeField] private GameObject _hitSparkPrefab;
+	[SerializeField] private float _sparkPerfectScale = 1.5f;
+	[SerializeField] private float _sparkGoodScale = 1.1f;
+	[SerializeField] private float _sparkBadScale = 0.8f;
+
+	[Header("Platform Punch")]
+	[SerializeField] private float _punchPerfect = 0.15f;
+	[SerializeField] private float _punchGood = 0.1f;
+	[SerializeField] private float _punchBad = 0.05f;
+	[SerializeField, Min(0f)] private float _punchDuration = 0.15f;
+	[SerializeField, Min(1)] private int _punchVibrato = 4;
+	[SerializeField, Range(0f, 1f)] private float _punchElasticity = 0.5f;
+
+	[Header("Miss Flash")]
+	[SerializeField] private Color _missFlashColor = Color.red;
+	[SerializeField, Min(0f)] private float _missFlashInDuration = 0.08f;
+	[SerializeField, Min(0f)] private float _missFlashOutDuration = 0.17f;
+	[SerializeField, Min(0f)] private float _missShakeDuration = 0.3f;
+	[SerializeField] private float _missShakeZStrength = 15f;
+	[SerializeField, Min(1)] private int _missShakeVibrato = 10;
+
+	[Header("UI Texts")]
+	[SerializeField] private RectTransform _scoreText;
+	[SerializeField] private RectTransform _comboText;
+	[SerializeField] private TextMeshProUGUI _comboTextTMP;
+	[SerializeField] private Color _comboTextDefaultColor = Color.white;
+
+	[Header("Score Punch")]
+	[SerializeField] private float _scorePunch = 0.1f;
+	[SerializeField, Min(0f)] private float _scorePunchDuration = 0.15f;
+
+	[Header("Combo Punch")]
+	[SerializeField] private float _comboPunch = 0.2f;
+	[SerializeField, Min(0f)] private float _comboPunchDuration = 0.25f;
+	[SerializeField, Min(0f)] private float _comboColorFlashDuration = 0.2f;
+
+	[Header("Combo Reset")]
+	[SerializeField] private Color _comboResetColor = Color.red;
+	[SerializeField] private float _comboResetShrinkScale = 0.8f;
+	[SerializeField, Min(0f)] private float _comboResetDuration = 0.2f;
+
+	[Header("Health Bar")]
+	[SerializeField] private RectTransform _healthBarContainer;
+	[SerializeField, Tooltip("Used to identify which health icon is a lost life so it can be flashed")]
+	private Sprite _lostLifeSprite;
+	[SerializeField, Min(0f)] private float _healthShakeDuration = 0.3f;
+	[SerializeField] private float _healthShakeStrength = 12f;
+	[SerializeField, Min(1)] private int _healthShakeVibrato = 10;
+	[SerializeField, Min(0f)] private float _lostLifeFlashDuration = 0.25f;
+
+	private Color _platformOriginalColor;
+	private Vector3 _platformOriginalScale;
+	private Vector3 _scoreOriginalScale;
+	private Vector3 _comboOriginalScale;
+	private Vector3 _healthOriginalPos;
+
+	private Tween _platformColorTween;
+	private Tween _platformShakeTween;
+	private Tween _platformPunchTween;
+	private Tween _scorePunchTween;
+	private Tween _comboPunchTween;
+	private Tween _comboColorTween;
+	private Tween _healthShakeTween;
+
+	private void Awake()
+	{
+		if (_platformSprite)
+			_platformOriginalColor = _platformSprite.color;
+		if (_platformTransform)
+			_platformOriginalScale = _platformTransform.localScale;
+		if (_scoreText)
+			_scoreOriginalScale = _scoreText.localScale;
+		if (_comboText)
+			_comboOriginalScale = _comboText.localScale;
+		if (_healthBarContainer)
+			_healthOriginalPos = _healthBarContainer.anchoredPosition3D;
+	}
+
+	public void PlayHit(Vector3 worldPos, NoteGrade grade, Color comboColor)
+	{
+		SpawnSpark(worldPos, grade, comboColor);
+		PunchPlatform(grade);
+	}
+
+	public void PlayMiss()
+	{
+		FlashPlatformRed();
+		ShakePlatform();
+	}
+
+	public void OnScoreChanged()
+	{
+		if (!_scoreText) return;
+		_scorePunchTween?.Kill(true);
+		_scoreText.localScale = _scoreOriginalScale;
+		_scorePunchTween = _scoreText.DOPunchScale(Vector3.one * _scorePunch, _scorePunchDuration);
+	}
+
+	public void OnComboIncreased(Color comboColor)
+	{
+		if (_comboText)
+		{
+			_comboPunchTween?.Kill(true);
+			_comboText.localScale = _comboOriginalScale;
+			_comboPunchTween = _comboText.DOPunchScale(Vector3.one * _comboPunch, _comboPunchDuration);
+		}
+
+		if (_comboTextTMP)
+		{
+			_comboColorTween?.Kill();
+			_comboTextTMP.color = comboColor;
+			_comboColorTween = _comboTextTMP.DOColor(_comboTextDefaultColor, _comboColorFlashDuration);
+		}
+	}
+
+	public void OnComboReset()
+	{
+		if (_comboText)
+		{
+			_comboPunchTween?.Kill();
+			_comboText.localScale = _comboOriginalScale;
+
+			Sequence shrink = DOTween.Sequence();
+			shrink.Append(_comboText.DOScale(_comboOriginalScale * _comboResetShrinkScale, _comboResetDuration * 0.5f));
+			shrink.Append(_comboText.DOScale(_comboOriginalScale, _comboResetDuration * 0.5f));
+			_comboPunchTween = shrink;
+		}
+
+		if (_comboTextTMP)
+		{
+			_comboColorTween?.Kill();
+			_comboTextTMP.color = _comboResetColor;
+			_comboColorTween = _comboTextTMP.DOColor(_comboTextDefaultColor, _comboResetDuration);
+		}
+	}
+
+	public void OnLifeLost()
+	{
+		if (_healthBarContainer)
+		{
+			_healthShakeTween?.Kill(true);
+			_healthBarContainer.anchoredPosition3D = _healthOriginalPos;
+			_healthShakeTween = _healthBarContainer.DOShakeAnchorPos(
+				_healthShakeDuration,
+				new Vector2(_healthShakeStrength, 0f),
+				_healthShakeVibrato);
+		}
+
+		FlashNewestLostLife();
+	}
+
+	private void SpawnSpark(Vector3 worldPos, NoteGrade grade, Color comboColor)
+	{
+		if (!_hitSparkPrefab) return;
+
+		GameObject sparkObj = Instantiate(_hitSparkPrefab, worldPos, Quaternion.identity);
+		HitSpark spark = sparkObj.GetComponent<HitSpark>();
+		if (!spark) return;
+
+		Color color = comboColor;
+		float multiplier = _sparkGoodScale;
+		switch (grade)
+		{
+			case NoteGrade.Perfect:
+				multiplier = _sparkPerfectScale;
+				break;
+			case NoteGrade.Good:
+				multiplier = _sparkGoodScale;
+				break;
+			case NoteGrade.Bad:
+				multiplier = _sparkBadScale;
+				color = DesaturateDim(comboColor, 0.5f, 0.75f);
+				break;
+		}
+
+		spark.Play(color, multiplier);
+	}
+
+	private void PunchPlatform(NoteGrade grade)
+	{
+		if (!_platformTransform) return;
+
+		float magnitude = grade switch
+		{
+			NoteGrade.Perfect => _punchPerfect,
+			NoteGrade.Good => _punchGood,
+			NoteGrade.Bad => _punchBad,
+			_ => 0f
+		};
+
+		_platformPunchTween?.Kill(true);
+		_platformTransform.localScale = _platformOriginalScale;
+		_platformPunchTween = _platformTransform.DOPunchScale(Vector3.one * magnitude, _punchDuration, _punchVibrato, _punchElasticity);
+	}
+
+	private void FlashPlatformRed()
+	{
+		if (!_platformSprite) return;
+
+		_platformColorTween?.Kill();
+		_platformSprite.color = _platformOriginalColor;
+
+		Sequence flash = DOTween.Sequence();
+		flash.Append(_platformSprite.DOColor(_missFlashColor, _missFlashInDuration));
+		flash.Append(_platformSprite.DOColor(_platformOriginalColor, _missFlashOutDuration));
+		_platformColorTween = flash;
+	}
+
+	private void ShakePlatform()
+	{
+		if (!_platformTransform) return;
+
+		_platformShakeTween?.Kill(true);
+		_platformTransform.localRotation = Quaternion.Euler(0f, 0f, _platformTransform.localEulerAngles.z);
+		_platformShakeTween = _platformTransform.DOShakeRotation(
+			_missShakeDuration,
+			new Vector3(0f, 0f, _missShakeZStrength),
+			_missShakeVibrato);
+	}
+
+	private void FlashNewestLostLife()
+	{
+		if (!_healthBarContainer || _healthBarContainer.childCount == 0) return;
+
+		for (int i = 0; i < _healthBarContainer.childCount; i++)
+		{
+			Transform child = _healthBarContainer.GetChild(i);
+			Image img = child.GetComponent<Image>();
+			if (!img) continue;
+
+			if (IsLostLife(img))
+			{
+				Color start = img.color;
+				Sequence fade = DOTween.Sequence();
+				fade.Append(img.DOColor(_missFlashColor, _lostLifeFlashDuration * 0.4f));
+				fade.Append(img.DOColor(start, _lostLifeFlashDuration * 0.6f));
+				return;
+			}
+		}
+	}
+
+	private bool IsLostLife(Image img)
+	{
+		if (!img || !img.sprite) return false;
+		if (_lostLifeSprite) return img.sprite == _lostLifeSprite;
+		return img.sprite.name.ToLower().Contains("lost");
+	}
+
+	private static Color DesaturateDim(Color c, float saturationFactor, float valueFactor)
+	{
+		Color.RGBToHSV(c, out float h, out float s, out float v);
+		return Color.HSVToRGB(h, s * saturationFactor, v * valueFactor);
+	}
+}

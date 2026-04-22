@@ -18,6 +18,7 @@ public class Gameplay : MonoBehaviour
 	[SerializeField] private Player _player;
 	[SerializeField] private NoteSpawner _noteSpawner;
 	[SerializeField] private AudioSource _sfxAudioSource;
+	[SerializeField] private GameplayFeedback _feedback;
 
 	[Header("UI Texts")]
 	[SerializeField] private TextMeshProUGUI _scoreText;
@@ -88,6 +89,9 @@ public class Gameplay : MonoBehaviour
 	{
 		note.OnNoteFinished -= ProcessNoteResult;
 
+		// Captured before any logic that may destroy the note later in the frame.
+		Vector3 notePosition = note.transform.position;
+
 		if (grade == NoteGrade.Miss)
 		{
 			_currentLives--;
@@ -95,16 +99,32 @@ public class Gameplay : MonoBehaviour
 			_currentComboColor = RandomComboColor();
 			_sfxAudioSource.PlayOneShot(_missSound);
 			UpdateHealthBar();
+
+			if (_feedback)
+			{
+				_feedback.PlayMiss();
+				_feedback.OnComboReset();
+				_feedback.OnLifeLost();
+			}
 		}
 		else
 		{
 			_currentCombo++;
 			_sfxAudioSource.PlayOneShot(_hitSound);
+
+			if (_feedback)
+			{
+				_feedback.PlayHit(notePosition, grade, _currentComboColor);
+				_feedback.OnComboIncreased(_currentComboColor);
+			}
 		}
 
 		_currentScore += _gradeToScoreMapping.Find(item => item.Grade == grade).Score;
 		UpdateScoreText();
 		UpdateComboText();
+
+		if (_feedback)
+			_feedback.OnScoreChanged();
 
 		if (_currentLives <= 0)
 		{

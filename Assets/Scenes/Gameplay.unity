@@ -733,6 +733,7 @@ GameObject:
   m_Component:
   - component: {fileID: 508679101}
   - component: {fileID: 508679103}
+  - component: {fileID: 508679104}
   m_Layer: 0
   m_Name: Gameplay
   m_TagString: Untagged
@@ -771,6 +772,7 @@ MonoBehaviour:
   _player: {fileID: 592203121}
   _noteSpawner: {fileID: 714267417}
   _sfxAudioSource: {fileID: 1848635522}
+  _feedback: {fileID: 508679104}
   _scoreText: {fileID: 1830590492}
   _maxAmountOfScoreDigits: 7
   _comboText: {fileID: 587434090}
@@ -783,6 +785,7 @@ MonoBehaviour:
   _hitSound: {fileID: 8300000, guid: 63a791f35dd2185418afb34cb8c2bb2e, type: 3}
   _missSound: {fileID: 8300000, guid: 8db1327a7e53d914b9674ab484562270, type: 3}
   _currentCombo: 0
+  _currentComboColor: {r: 0, g: 0, b: 0, a: 0}
   _gradeToScoreMapping:
   - Grade: 0
     Score: 0
@@ -793,6 +796,54 @@ MonoBehaviour:
   - Grade: 3
     Score: 300
   _currentScore: 0
+--- !u!114 &508679104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 508679100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c8d4e5f6a742b8c9d0e1f2a3b4c5d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameplayFeedback
+  _platformTransform: {fileID: 592203120}
+  _platformSprite: {fileID: 2087151023}
+  _hitSparkPrefab: {fileID: 8100000000000000001, guid: c3d9e5f6a7b842c9d0e1f2a3b4c5d6e7, type: 3}
+  _sparkPerfectScale: 1.5
+  _sparkGoodScale: 1.1
+  _sparkBadScale: 0.8
+  _punchPerfect: 0.05
+  _punchGood: 0.04
+  _punchBad: 0.03
+  _punchDuration: 0.15
+  _punchVibrato: 10
+  _punchElasticity: 0.5
+  _missFlashColor: {r: 1, g: 0, b: 0, a: 1}
+  _missFlashInDuration: 0.08
+  _missFlashOutDuration: 0.17
+  _missShakeDuration: 0.3
+  _missShakeZStrength: 3
+  _missShakeVibrato: 4
+  _scoreText: {fileID: 1830590491}
+  _comboText: {fileID: 587434089}
+  _comboTextTMP: {fileID: 587434090}
+  _comboTextDefaultColor: {r: 1, g: 1, b: 1, a: 1}
+  _scorePunch: 0.1
+  _scorePunchDuration: 0.15
+  _comboPunch: 0.2
+  _comboPunchDuration: 0.25
+  _comboColorFlashDuration: 0.2
+  _comboResetColor: {r: 1, g: 0, b: 0, a: 1}
+  _comboResetShrinkScale: 0.8
+  _comboResetDuration: 0.2
+  _healthBarContainer: {fileID: 837211377}
+  _lostLifeSprite: {fileID: 21300000, guid: 832c90a74f7041249bbdac9ba7edffc4, type: 3}
+  _healthShakeDuration: 0.3
+  _healthShakeStrength: 12
+  _healthShakeVibrato: 10
+  _lostLifeFlashDuration: 0.25
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
