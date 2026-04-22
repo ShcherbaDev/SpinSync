@@ -43,7 +43,8 @@ public class SongPreviewPlayer : MonoBehaviour
 
 		oldSource.DOKill();
 		oldSource.DOFade(0f, _crossfadeDuration)
-			.OnComplete(() => oldSource.Stop());
+			.SetLink(oldSource.gameObject)
+			.OnComplete(() => { if (oldSource) oldSource.Stop(); });
 
 		newSource.DOKill();
 		if (song != null && song.Song != null)
@@ -52,7 +53,7 @@ public class SongPreviewPlayer : MonoBehaviour
 			newSource.time = Mathf.Clamp(song.PreviewStartTime, 0f, Mathf.Max(0f, song.Song.length - 0.1f));
 			newSource.volume = 0f;
 			newSource.Play();
-			newSource.DOFade(_targetVolume, _crossfadeDuration);
+			newSource.DOFade(_targetVolume, _crossfadeDuration).SetLink(newSource.gameObject);
 		}
 
 		_activeSource = newSource;
@@ -60,7 +61,7 @@ public class SongPreviewPlayer : MonoBehaviour
 
 	public Tween FadeOutAll(float duration)
 	{
-		Sequence seq = DOTween.Sequence();
+		Sequence seq = DOTween.Sequence().SetLink(gameObject);
 		if (_sourceA && _sourceA.isPlaying) seq.Join(_sourceA.DOFade(0f, duration));
 		if (_sourceB && _sourceB.isPlaying) seq.Join(_sourceB.DOFade(0f, duration));
 		return seq;

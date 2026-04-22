@@ -209,7 +209,8 @@ public class SongSelectController : MonoBehaviour
 				rect.DOAnchorPosY(targetY, _layoutDuration)
 					.SetEase(Ease.OutCubic)
 					.SetDelay(stagger)
-					.SetId(layoutId);
+					.SetId(layoutId)
+					.SetLink(rect.gameObject);
 			}
 			else
 			{
@@ -236,7 +237,9 @@ public class SongSelectController : MonoBehaviour
 			const string tintId = "accentTint";
 			DOTween.Kill(tintId);
 			if (animate)
-				_accentTintOverlay.DOColor(tint, _tintFadeDuration).SetId(tintId);
+				_accentTintOverlay.DOColor(tint, _tintFadeDuration)
+					.SetId(tintId)
+					.SetLink(_accentTintOverlay.gameObject);
 			else
 				_accentTintOverlay.color = tint;
 		}
@@ -271,6 +274,7 @@ public class SongSelectController : MonoBehaviour
 		if (!_enablePlayButtonPulse || _playButtonRect == null) return;
 		_playButtonRect.DOScale(_playButtonPulseScale, _playButtonPulseDuration)
 			.SetEase(Ease.InOutSine)
-			.SetLoops(-1, LoopType.Yoyo);
+			.SetLoops(-1, LoopType.Yoyo)
+			.SetLink(_playButtonRect.gameObject);
 	}
 }

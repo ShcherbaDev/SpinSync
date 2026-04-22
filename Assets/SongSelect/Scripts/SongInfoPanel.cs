@@ -34,11 +34,13 @@ public class SongInfoPanel : MonoBehaviour
 		}
 
 		_canvasGroup.DOKill();
-		_canvasGroup.DOFade(0f, _fadeOutDuration).OnComplete(() =>
-		{
-			ApplyText(data);
-			_canvasGroup.DOFade(1f, _fadeInDuration);
-		});
+		_canvasGroup.DOFade(0f, _fadeOutDuration)
+			.SetLink(gameObject)
+			.OnComplete(() =>
+			{
+				ApplyText(data);
+				_canvasGroup.DOFade(1f, _fadeInDuration).SetLink(gameObject);
+			});
 	}
 
 	private void ApplyText(LevelData data)

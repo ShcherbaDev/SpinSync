@@ -106,10 +106,10 @@ public class SongCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
 
 		if (animate)
 		{
-			_rect.DOScale(targetScale, _selectDuration).SetEase(ease).SetId(ScaleId);
-			_rect.DOAnchorPosX(targetX, _selectDuration).SetEase(ease).SetId(PosXId);
-			_canvasGroup.DOFade(targetAlpha, _selectDuration).SetId(AlphaId);
-			if (_background) _background.DOColor(bgColor, _selectDuration).SetId(BgColorId);
+			_rect.DOScale(targetScale, _selectDuration).SetEase(ease).SetId(ScaleId).SetLink(gameObject);
+			_rect.DOAnchorPosX(targetX, _selectDuration).SetEase(ease).SetId(PosXId).SetLink(gameObject);
+			_canvasGroup.DOFade(targetAlpha, _selectDuration).SetId(AlphaId).SetLink(gameObject);
+			if (_background) _background.DOColor(bgColor, _selectDuration).SetId(BgColorId).SetLink(gameObject);
 		}
 		else
 		{
@@ -132,7 +132,7 @@ public class SongCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
 		if (_isSelected) return;
 		_isHovered = true;
 		DOTween.Kill(ScaleId);
-		_rect.DOScale(_hoverScale, _hoverDuration).SetId(ScaleId);
+		_rect.DOScale(_hoverScale, _hoverDuration).SetId(ScaleId).SetLink(gameObject);
 	}
 
 	public void OnPointerExit(PointerEventData eventData)
@@ -140,7 +140,7 @@ public class SongCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
 		if (_isSelected) return;
 		_isHovered = false;
 		DOTween.Kill(ScaleId);
-		_rect.DOScale(1f, _hoverDuration).SetId(ScaleId);
+		_rect.DOScale(1f, _hoverDuration).SetId(ScaleId).SetLink(gameObject);
 	}
 
 	private static string StarString(int difficulty)
