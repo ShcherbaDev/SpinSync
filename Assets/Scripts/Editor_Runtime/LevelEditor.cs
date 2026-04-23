@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 namespace SpinSync.EditorRuntime
@@ -152,15 +153,18 @@ namespace SpinSync.EditorRuntime
 
 		private void HandleKeyboardShortcuts()
 		{
-			bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+			Keyboard kb = Keyboard.current;
+			if (kb == null) return;
 
-			if (ctrl && Input.GetKeyDown(KeyCode.Z))
+			bool ctrl = kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed;
+
+			if (ctrl && kb.zKey.wasPressedThisFrame)
 				Undo();
-			else if (ctrl && Input.GetKeyDown(KeyCode.Y))
+			else if (ctrl && kb.yKey.wasPressedThisFrame)
 				Redo();
-			else if (ctrl && Input.GetKeyDown(KeyCode.S))
+			else if (ctrl && kb.sKey.wasPressedThisFrame)
 				SaveCurrent();
-			else if (Input.GetKeyDown(KeyCode.Delete) && _selectedNoteIndex.HasValue && _mode == EditorMode.Edit)
+			else if (kb.deleteKey.wasPressedThisFrame && _selectedNoteIndex.HasValue && _mode == EditorMode.Edit)
 				DeleteSelectedNote();
 		}
 
