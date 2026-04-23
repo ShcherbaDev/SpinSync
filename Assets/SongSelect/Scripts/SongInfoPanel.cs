@@ -1,4 +1,5 @@
 using DG.Tweening;
+using SpinSync.EditorRuntime;
 using TMPro;
 using UnityEngine;
 
@@ -25,7 +26,7 @@ public class SongInfoPanel : MonoBehaviour
 		if (_canvasGroup == null) _canvasGroup = GetComponent<CanvasGroup>();
 	}
 
-	public void SetSong(LevelData data)
+	public void SetSong(Level data)
 	{
 		if (_canvasGroup == null)
 		{
@@ -43,12 +44,12 @@ public class SongInfoPanel : MonoBehaviour
 			});
 	}
 
-	private void ApplyText(LevelData data)
+	private void ApplyText(Level data)
 	{
-		if (_titleText) _titleText.text = string.IsNullOrEmpty(data.Title) ? data.name : data.Title;
+		if (_titleText) _titleText.text = string.IsNullOrEmpty(data.Title) ? data.SongId : data.Title;
 		if (_artistText) _artistText.text = string.IsNullOrEmpty(data.Artist) ? "Unknown Artist" : data.Artist;
 		if (_bpmText) _bpmText.text = $"BPM  {data.BPM:0}";
-		if (_durationText) _durationText.text = $"Length  {FormatDuration(data.Song != null ? data.Song.length : 0f)}";
+		if (_durationText) _durationText.text = $"Length  {FormatDuration(data.AudioClip != null ? data.AudioClip.length : 0f)}";
 		if (_difficultyText) _difficultyText.text = $"Difficulty  {StarString(data.Difficulty)}";
 	}
 

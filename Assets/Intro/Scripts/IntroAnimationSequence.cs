@@ -1,4 +1,7 @@
+using System.Collections;
+using System.Collections.Generic;
 using DG.Tweening;
+using SpinSync.EditorRuntime;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,11 +19,11 @@ public class IntroAnimationSequence : MonoBehaviour
 	[SerializeField] private float _logoEndScale = 1f;
 
 	[Header("Background Music")]
-	[SerializeField, Tooltip("If assigned, a random song is picked from this library (falls back to _musicClip if the library is empty)")]
-	private SongLibrary _songLibrary;
-	[SerializeField] private AudioClip _musicClip;
+	[SerializeField, Tooltip("Fallback clip played only when no levels are available in StreamingAssets/Levels/ or persistentDataPath/Levels/.")]
+	private AudioClip _musicClip;
 	[SerializeField, Range(0f, 1f)] private float _musicVolume = 0.7f;
-	[SerializeField, Min(30f)] private float _musicBPM = 120f;
+	[SerializeField, Min(30f), Tooltip("BPM used for the logo pulse if no level is picked. When a random level is picked, its BPM is used instead.")]
+	private float _musicBPM = 120f;
 
 	[Header("Logo Pulse (after intro)")]
 	[SerializeField, Range(0f, 1f)] private float _pulseAmplitude = 0.08f;
@@ -92,49 +95,59 @@ public class IntroAnimationSequence : MonoBehaviour
 
 	private void StartBackgroundMusic()
 	{
-		AudioClip clip = _musicClip;
-		float bpm = _musicBPM;
-
-		if (_songLibrary != null && _songLibrary.Songs != null && _songLibrary.Songs.Count > 0)
-		{
-			LevelData pick = PickRandomSong(_songLibrary);
-			if (pick != null && pick.Song != null)
-			{
-				clip = pick.Song;
-				bpm = pick.BPM;
-			}
-		}
-
-		if (!clip) return;
-
-		_musicBPM = bpm;
-
 		_musicAudioSource = GetComponent<AudioSource>();
 		if (!_musicAudioSource)
 			_musicAudioSource = gameObject.AddComponent<AudioSource>();
 
-		_musicAudioSource.clip = clip;
 		_musicAudioSource.volume = _musicVolume;
 		_musicAudioSource.loop = true;
 		_musicAudioSource.playOnAwake = false;
-		_musicAudioSource.Play();
+
+		StartCoroutine(PickAndPlayRandomLevelMusic());
 	}
 
-	private static LevelData PickRandomSong(SongLibrary library)
+	private IEnumerator PickAndPlayRandomLevelMusic()
 	{
-		for (int attempts = 0; attempts < 8; attempts++)
+		IReadOnlyList<string> ids = LevelStorage.ListAll();
+		if (ids != null && ids.Count > 0)
 		{
-			int index = Random.Range(0, library.Songs.Count);
-			LevelData candidate = library.Songs[index];
-			if (candidate != null && candidate.Song != null)
-				return candidate;
+			// Try a few random picks; fall back to iterating if any fail to load audio.
+			HashSet<string> tried = new HashSet<string>();
+			for (int attempt = 0; attempt < ids.Count + 3; attempt++)
+			{
+				string id = (attempt < 3)
+					? ids[Random.Range(0, ids.Count)]
+					: NextUntried(ids, tried);
+				if (string.IsNullOrEmpty(id)) break;
+				if (!tried.Add(id)) continue;
+
+				Level level = LevelStorage.Load(id);
+				if (level == null) continue;
+
+				yield return LevelAudioLoader.LoadInto(level);
+				if (level.AudioClip == null) continue;
+
+				_musicBPM = level.BPM > 0f ? level.BPM : _musicBPM;
+				_musicAudioSource.clip = level.AudioClip;
+				_musicAudioSource.time = Mathf.Clamp(level.PreviewStartTime, 0f, Mathf.Max(0f, level.AudioClip.length - 0.1f));
+				_musicAudioSource.Play();
+				yield break;
+			}
 		}
 
-		foreach (LevelData song in library.Songs)
+		// Fallback: the legacy inspector-assigned clip.
+		if (_musicClip != null)
 		{
-			if (song != null && song.Song != null)
-				return song;
+			_musicAudioSource.clip = _musicClip;
+			_musicAudioSource.time = 0f;
+			_musicAudioSource.Play();
 		}
+	}
+
+	private static string NextUntried(IReadOnlyList<string> ids, HashSet<string> tried)
+	{
+		foreach (string id in ids)
+			if (!tried.Contains(id)) return id;
 		return null;
 	}
 

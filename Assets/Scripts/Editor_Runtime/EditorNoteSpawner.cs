@@ -45,7 +45,7 @@ namespace SpinSync.EditorRuntime
 		private readonly List<SpriteRenderer> _ghostPool = new List<SpriteRenderer>();
 		private int _ghostPoolUsed;
 
-		public void ConfigureFromLevel(LevelData level)
+		public void ConfigureFromLevel(Level level)
 		{
 			if (level != null)
 				_noteTravelDuration = level.NoteTravelDuration;

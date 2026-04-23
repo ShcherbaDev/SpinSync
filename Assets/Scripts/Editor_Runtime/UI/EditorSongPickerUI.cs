@@ -1,17 +1,16 @@
-using TMPro;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace SpinSync.EditorRuntime.UI
 {
 	/// <summary>
-	/// Modal at scene start that lists songs from a SongLibrary asset and loads one into the LevelEditor.
-	/// Re-openable from the toolbar later if desired.
+	/// Modal at scene start that lists every level under StreamingAssets/Levels/ (plus any user
+	/// overrides in persistentDataPath) and loads one into the LevelEditor.
 	/// </summary>
 	public class EditorSongPickerUI : MonoBehaviour
 	{
 		[SerializeField] private LevelEditor _editor;
-		[SerializeField] private SongLibrary _library;
 
 		[Header("UI")]
 		[SerializeField] private GameObject _modalRoot;
@@ -52,18 +51,18 @@ namespace SpinSync.EditorRuntime.UI
 			for (int i = _entriesContainer.childCount - 1; i >= 0; i--)
 				Destroy(_entriesContainer.GetChild(i).gameObject);
 
-			if (_library == null || _library.Songs == null) return;
-
-			foreach (LevelData song in _library.Songs)
+			IReadOnlyList<string> ids = LevelStorage.ListAll();
+			foreach (string id in ids)
 			{
-				if (song == null) continue;
-				LevelData captured = song;
+				Level level = LevelStorage.Load(id);
+				if (level == null) continue;
 
+				string capturedId = id;
 				SongPickerEntry entry = Instantiate(_entryPrefab, _entriesContainer);
-				bool exists = CustomLevelStorage.Exists(song.name);
-				entry.Bind(song.Title, song.Artist, exists, () =>
+				bool hasUserOverride = LevelStorage.UserOverrideExists(id);
+				entry.Bind(level.Title, level.Artist, hasUserOverride, () =>
 				{
-					_editor.LoadSong(captured);
+					_editor.LoadSong(capturedId);
 					Hide();
 				});
 			}

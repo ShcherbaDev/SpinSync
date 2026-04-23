@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -32,8 +33,7 @@ namespace SpinSync.EditorRuntime
 
 		// ---- State ----
 
-		private LevelData _selectedSong;
-		private CustomLevelData _editingLevel;
+		private Level _editingLevel;
 		private EditorMode _mode = EditorMode.Edit;
 		private bool _isPlaying;
 		private bool _isDirty;
@@ -58,8 +58,8 @@ namespace SpinSync.EditorRuntime
 
 		// ---- Public read-only state ----
 
-		public LevelData SelectedSong { get { return _selectedSong; } }
-		public CustomLevelData EditingLevel { get { return _editingLevel; } }
+		public Level SelectedSong { get { return _editingLevel; } }
+		public Level EditingLevel { get { return _editingLevel; } }
 		public IReadOnlyList<CustomNote> Notes
 		{
 			get { return _editingLevel != null ? (IReadOnlyList<CustomNote>)_editingLevel.Notes : Array.Empty<CustomNote>(); }
@@ -134,11 +134,9 @@ namespace SpinSync.EditorRuntime
 			if (_isPlaying && _audioSource != null && _audioSource.isPlaying)
 				_playheadTime = _audioSource.time;
 
-			// Place notes on key press during playback.
 			if (_isPlaying && _inputActions.Player.Press.WasPressedThisFrame())
 				PlaceNoteAtCurrentState();
 
-			// Render preview ghosts.
 			if (_spawner != null && _editingLevel != null)
 				_spawner.RenderEditPreview(_editingLevel.Notes, _playheadTime);
 		}
@@ -157,7 +155,6 @@ namespace SpinSync.EditorRuntime
 			Keyboard kb = Keyboard.current;
 			if (kb == null) return;
 
-			// In Test mode, ESC reveals the cursor so the user can click UI (e.g. Stop Test) to leave.
 			if (_mode == EditorMode.Test && kb.escapeKey.wasPressedThisFrame)
 			{
 				Cursor.visible = true;
@@ -179,21 +176,34 @@ namespace SpinSync.EditorRuntime
 
 		// ---- Song loading ----
 
-		public void LoadSong(LevelData song)
+		/// <summary>
+		/// Load a level by SongId. If the level exists in storage it's loaded; otherwise a new empty
+		/// level is created with that SongId. Audio is loaded asynchronously.
+		/// </summary>
+		public void LoadSong(string songId)
 		{
-			_selectedSong = song;
-			_editingLevel = CustomLevelStorage.Load(song.name) ?? new CustomLevelData { SongId = song.name };
+			Level level = LevelStorage.Load(songId);
+			if (level == null)
+			{
+				Debug.LogWarning($"[LevelEditor] No level '{songId}' in storage; creating empty draft.");
+				level = new Level { SongId = songId, Title = songId };
+			}
+			LoadLevel(level);
+		}
+
+		public void LoadLevel(Level level)
+		{
+			_editingLevel = level;
 			_editingLevel.Notes.Sort((a, b) => a.Time.CompareTo(b.Time));
 
 			if (_audioSource != null)
 			{
 				_audioSource.Stop();
-				_audioSource.clip = song.Song;
+				_audioSource.clip = null;
 				_audioSource.time = 0f;
 			}
 
-			if (_spawner != null)
-				_spawner.ConfigureFromLevel(song);
+			StartCoroutine(LoadClipAndConfigure());
 
 			_isPlaying = false;
 			_playheadTime = 0f;
@@ -206,6 +216,22 @@ namespace SpinSync.EditorRuntime
 			OnSelectionChanged?.Invoke();
 			OnPlaybackStateChanged?.Invoke();
 			OnDirtyChanged?.Invoke();
+		}
+
+		private IEnumerator LoadClipAndConfigure()
+		{
+			string id = _editingLevel.SongId;
+			yield return LevelAudioLoader.LoadInto(_editingLevel);
+
+			if (_editingLevel == null || _editingLevel.SongId != id) yield break; // level changed mid-load
+
+			if (_audioSource != null)
+				_audioSource.clip = _editingLevel.AudioClip;
+
+			if (_spawner != null)
+				_spawner.ConfigureFromLevel(_editingLevel);
+
+			OnLevelLoaded?.Invoke();
 		}
 
 		// ---- Playback ----
@@ -351,10 +377,10 @@ namespace SpinSync.EditorRuntime
 			if (_editingLevel == null)
 				return;
 
-			CustomLevelStorage.Save(_editingLevel);
+			LevelStorage.Save(_editingLevel);
 			_isDirty = false;
 			OnDirtyChanged?.Invoke();
-			Debug.Log($"[LevelEditor] Saved {_editingLevel.SongId} ({_editingLevel.Notes.Count} notes) to {CustomLevelStorage.FilePathFor(_editingLevel.SongId)}");
+			Debug.Log($"[LevelEditor] Saved {_editingLevel.SongId} ({_editingLevel.Notes.Count} notes) to {_editingLevel.FolderPath}");
 		}
 
 		// ---- Mode switching ----
@@ -423,20 +449,17 @@ namespace SpinSync.EditorRuntime
 			SceneManager.LoadScene(IntroSceneName);
 		}
 
-		/// <summary>
-		/// Save the current JSON level and jump to the Gameplay scene to play it (bypassing Timeline).
-		/// </summary>
 		public void PlayCustomInGameplay()
 		{
-			if (_selectedSong == null || _editingLevel == null)
+			if (_editingLevel == null)
 			{
-				Debug.LogWarning("[LevelEditor] Cannot Play Custom: no song/level loaded.");
+				Debug.LogWarning("[LevelEditor] Cannot Play: no level loaded.");
 				return;
 			}
 
 			SaveCurrent();
 
-			SongSelection.Current = _selectedSong;
+			SongSelection.Current = _editingLevel;
 
 			SceneManager.LoadScene(GameplaySceneName);
 		}
@@ -458,17 +481,14 @@ namespace SpinSync.EditorRuntime
 				return 0f;
 
 			float pivotZ = Mathf.Repeat(_player.PivotTransform.eulerAngles.z, 360f);
-			// NoteMarker.Angle is CW from +Y; pivot rotation around Z is CCW.
 			return Mathf.Repeat(360f - pivotZ, 360f);
 		}
 
 		private float MaybeSnap(float time)
 		{
-			if (!_bpmSnapEnabled || _selectedSong == null || _selectedSong.BPM <= 0f)
+			if (!_bpmSnapEnabled || _editingLevel == null || _editingLevel.BPM <= 0f)
 				return time;
 
-			// Quarter = 4 subdivisions per beat? No: traditional notation — Quarter note = 1 beat.
-			// Subdivision per beat: Quarter=1, Eighth=2, Sixteenth=4.
 			int subsPerBeat;
 			switch (_snapSubdivision)
 			{
@@ -477,7 +497,7 @@ namespace SpinSync.EditorRuntime
 				default: subsPerBeat = 1; break;
 			}
 
-			float secondsPerBeat = 60f / _selectedSong.BPM;
+			float secondsPerBeat = 60f / _editingLevel.BPM;
 			float subInterval = secondsPerBeat / subsPerBeat;
 			return Mathf.Round(time / subInterval) * subInterval;
 		}

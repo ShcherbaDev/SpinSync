@@ -1,4 +1,5 @@
 using DG.Tweening;
+using SpinSync.EditorRuntime;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -31,14 +32,14 @@ public class SongCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
 	[SerializeField, Range(0f, 1f)] private float _unselectedBgAlpha = 0.18f;
 	[SerializeField, Range(0f, 1f)] private float _selectedBgAlpha = 0.4f;
 
-	private LevelData _data;
+	private Level _data;
 	private int _index;
 	private System.Action<int> _onClicked;
 	private bool _isSelected;
 	private bool _isHovered;
 
 	public RectTransform Rect => _rect;
-	public LevelData Data => _data;
+	public Level Data => _data;
 
 	private void Reset()
 	{
@@ -52,16 +53,16 @@ public class SongCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
 		if (_canvasGroup == null) _canvasGroup = GetComponent<CanvasGroup>();
 	}
 
-	public void Bind(LevelData data, int index, System.Action<int> onClicked)
+	public void Bind(Level data, int index, System.Action<int> onClicked)
 	{
 		_data = data;
 		_index = index;
 		_onClicked = onClicked;
 
-		if (_titleText) _titleText.text = string.IsNullOrEmpty(data.Title) ? data.name : data.Title;
+		if (_titleText) _titleText.text = string.IsNullOrEmpty(data.Title) ? data.SongId : data.Title;
 		if (_artistText) _artistText.text = string.IsNullOrEmpty(data.Artist) ? "Unknown Artist" : data.Artist;
 		if (_difficultyText) _difficultyText.text = StarString(data.Difficulty);
-		if (_durationText) _durationText.text = FormatDuration(data.Song != null ? data.Song.length : 0f);
+		if (_durationText) _durationText.text = FormatDuration(data.AudioClip != null ? data.AudioClip.length : 0f);
 
 		if (_background)
 		{
@@ -120,6 +121,13 @@ public class SongCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
 			_canvasGroup.alpha = targetAlpha;
 			if (_background) _background.color = bgColor;
 		}
+	}
+
+	/// <summary>Called by the controller once the AudioClip has finished loading so we can show the real duration.</summary>
+	public void RefreshDuration()
+	{
+		if (_data != null && _durationText)
+			_durationText.text = FormatDuration(_data.AudioClip != null ? _data.AudioClip.length : 0f);
 	}
 
 	public void OnPointerClick(PointerEventData eventData)

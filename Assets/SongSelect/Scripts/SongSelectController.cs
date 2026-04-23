@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using SpinSync.EditorRuntime;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -7,9 +9,6 @@ using UnityEngine.UI;
 
 public class SongSelectController : MonoBehaviour
 {
-	[Header("Data")]
-	[SerializeField] private SongLibrary _library;
-
 	[Header("Scene Navigation")]
 	[SerializeField] private string _gameplaySceneName = "Gameplay";
 	[SerializeField] private string _introSceneName = "Intro";
@@ -50,6 +49,7 @@ public class SongSelectController : MonoBehaviour
 	[SerializeField] private float _scrollDeadzone = 50f;
 
 	private readonly List<SongCard> _cards = new List<SongCard>();
+	private readonly List<Level> _levels = new List<Level>();
 	private int _selectedIndex;
 	private ScreenFader _fader;
 	private bool _interactive;
@@ -77,21 +77,28 @@ public class SongSelectController : MonoBehaviour
 
 		if (!ValidateReferences()) return;
 
-		if (_library == null || _library.Songs == null || _library.Songs.Count == 0)
+		IReadOnlyList<string> ids = LevelStorage.ListAll();
+		if (ids.Count == 0)
 		{
-			Debug.LogWarning("SongSelectController: SongLibrary is empty. Populate it with LevelData assets.");
+			Debug.LogWarning("SongSelectController: No levels found. Expected folders under StreamingAssets/Levels/ or persistentDataPath/Levels/.");
 			return;
 		}
 
-		for (int i = 0; i < _library.Songs.Count; i++)
+		for (int i = 0; i < ids.Count; i++)
 		{
-			LevelData song = _library.Songs[i];
-			if (song == null) continue;
+			Level level = LevelStorage.Load(ids[i]);
+			if (level == null) continue;
+
+			_levels.Add(level);
 
 			SongCard card = Instantiate(_cardPrefab, _cardsContainer);
-			card.name = $"Card_{i}_{song.name}";
-			card.Bind(song, i, SelectByIndex);
+			card.name = $"Card_{i}_{level.SongId}";
+			int capturedIndex = _cards.Count;
+			card.Bind(level, capturedIndex, SelectByIndex);
 			_cards.Add(card);
+
+			// Preload audio in the background so duration/preview/play are ready when needed.
+			StartCoroutine(LoadClipForCard(level, card));
 		}
 
 		if (_cards.Count == 0) return;
@@ -111,6 +118,12 @@ public class SongSelectController : MonoBehaviour
 		{
 			_interactive = true;
 		}
+	}
+
+	private IEnumerator LoadClipForCard(Level level, SongCard card)
+	{
+		yield return LevelAudioLoader.LoadInto(level);
+		if (card != null) card.RefreshDuration();
 	}
 
 	private bool ValidateReferences()
@@ -226,7 +239,7 @@ public class SongSelectController : MonoBehaviour
 		for (int i = 0; i < _cards.Count; i++)
 			_cards[i].SetSelected(i == _selectedIndex, animate);
 
-		LevelData current = _cards[_selectedIndex].Data;
+		Level current = _cards[_selectedIndex].Data;
 		if (_infoPanel != null) _infoPanel.SetSong(current);
 		if (_previewPlayer != null) _previewPlayer.PlayPreview(current);
 

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using SpinSync.EditorRuntime;
 using TMPro;
@@ -62,24 +63,17 @@ public class Gameplay : MonoBehaviour
 
 	private void Awake()
 	{
-		LevelData song = SongSelection.Current;
-		if (song == null)
+		Level level = SongSelection.Current;
+		if (level == null)
 		{
 			Debug.LogWarning("[Gameplay] No SongSelection.Current set; nothing to play.");
 			return;
 		}
 
-		CustomLevelData level = CustomLevelStorage.Load(song.name);
-		if (level == null)
-			Debug.LogWarning($"[Gameplay] No custom JSON level found for '{song.name}'. The song will play with no notes. Create one in the Level Editor.");
+		if (_musicAudioSource != null) _musicAudioSource.time = 0f;
 
-		if (_musicAudioSource != null)
-		{
-			_musicAudioSource.clip = song.Song;
-			_musicAudioSource.time = 0f;
-		}
-		_noteSpawner.SetNoteTravelDuration(song.NoteTravelDuration);
-		_noteSpawner.LoadCustomLevel(level, _musicAudioSource);
+		_noteSpawner.SetNoteTravelDuration(level.NoteTravelDuration);
+		_noteSpawner.LoadLevel(level, _musicAudioSource);
 	}
 
 	private void Start()
@@ -89,10 +83,26 @@ public class Gameplay : MonoBehaviour
 
 		_currentComboColor = RandomComboColor();
 
-		if (SongSelection.Current != null)
-			Debug.Log($"Gameplay starting with selected song: {SongSelection.Current.Title} by {SongSelection.Current.Artist}");
+		Level level = SongSelection.Current;
+		if (level == null) return;
 
-		if (_musicAudioSource != null) _musicAudioSource.Play();
+		Debug.Log($"Gameplay starting with selected song: {level.Title} by {level.Artist}");
+
+		StartCoroutine(LoadAndPlay(level));
+	}
+
+	private IEnumerator LoadAndPlay(Level level)
+	{
+		if (level.AudioClip == null)
+			yield return LevelAudioLoader.LoadInto(level);
+
+		if (_musicAudioSource != null)
+		{
+			_musicAudioSource.clip = level.AudioClip;
+			_musicAudioSource.time = 0f;
+			if (level.AudioClip != null) _musicAudioSource.Play();
+			else Debug.LogWarning($"[Gameplay] Audio clip failed to load for '{level.SongId}'.");
+		}
 	}
 
 	private void OnEnable()

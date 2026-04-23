@@ -113,7 +113,6 @@ public class GameplayFeedback : MonoBehaviour
 	public void PlayMiss(Vector3 worldPos)
 	{
 		FlashPlatformRed();
-		ShakePlatform();
 		ShowGradeText(worldPos, NoteGrade.Miss);
 	}
 
@@ -243,20 +242,7 @@ public class GameplayFeedback : MonoBehaviour
 		_platformColorTween = flash;
 	}
 
-	private void ShakePlatform()
-	{
-		if (!_platformTransform) return;
-
-		_platformShakeTween?.Kill(true);
-		_platformTransform.localRotation = Quaternion.Euler(0f, 0f, _platformTransform.localEulerAngles.z);
-		_platformShakeTween = _platformTransform.DOShakeRotation(
-				_missShakeDuration,
-				new Vector3(0f, 0f, _missShakeZStrength),
-				_missShakeVibrato)
-			.SetLink(_platformTransform.gameObject);
-	}
-
-	private void FlashNewestLostLife()
+private void FlashNewestLostLife()
 	{
 		if (!_healthBarContainer || _healthBarContainer.childCount == 0) return;
 

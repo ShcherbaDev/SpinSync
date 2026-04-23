@@ -1,4 +1,5 @@
 using DG.Tweening;
+using SpinSync.EditorRuntime;
 using UnityEngine;
 
 public class SongPreviewPlayer : MonoBehaviour
@@ -11,7 +12,7 @@ public class SongPreviewPlayer : MonoBehaviour
 	private AudioSource _sourceA;
 	private AudioSource _sourceB;
 	private AudioSource _activeSource;
-	private LevelData _currentSong;
+	private Level _currentSong;
 
 	public float TargetVolume => _targetVolume;
 
@@ -33,7 +34,7 @@ public class SongPreviewPlayer : MonoBehaviour
 		return src;
 	}
 
-	public void PlayPreview(LevelData song)
+	public void PlayPreview(Level song)
 	{
 		if (song == _currentSong) return;
 		_currentSong = song;
@@ -47,16 +48,36 @@ public class SongPreviewPlayer : MonoBehaviour
 			.OnComplete(() => { if (oldSource) oldSource.Stop(); });
 
 		newSource.DOKill();
-		if (song != null && song.Song != null)
+		if (song != null && song.AudioClip != null)
 		{
-			newSource.clip = song.Song;
-			newSource.time = Mathf.Clamp(song.PreviewStartTime, 0f, Mathf.Max(0f, song.Song.length - 0.1f));
+			newSource.clip = song.AudioClip;
+			newSource.time = Mathf.Clamp(song.PreviewStartTime, 0f, Mathf.Max(0f, song.AudioClip.length - 0.1f));
 			newSource.volume = 0f;
 			newSource.Play();
 			newSource.DOFade(_targetVolume, _crossfadeDuration).SetLink(newSource.gameObject);
 		}
+		else if (song != null)
+		{
+			// Clip not loaded yet — queue the preview to start once loading finishes.
+			StartCoroutine(StartWhenClipReady(song, newSource));
+		}
 
 		_activeSource = newSource;
+	}
+
+	private System.Collections.IEnumerator StartWhenClipReady(Level song, AudioSource targetSource)
+	{
+		if (song.AudioClip == null)
+			yield return LevelAudioLoader.LoadInto(song);
+
+		if (_currentSong != song || song.AudioClip == null) yield break;
+		if (targetSource == null || targetSource != _activeSource) yield break;
+
+		targetSource.clip = song.AudioClip;
+		targetSource.time = Mathf.Clamp(song.PreviewStartTime, 0f, Mathf.Max(0f, song.AudioClip.length - 0.1f));
+		targetSource.volume = 0f;
+		targetSource.Play();
+		targetSource.DOFade(_targetVolume, _crossfadeDuration).SetLink(targetSource.gameObject);
 	}
 
 	public Tween FadeOutAll(float duration)

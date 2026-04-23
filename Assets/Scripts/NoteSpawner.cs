@@ -18,10 +18,10 @@ public class NoteSpawner : MonoBehaviour
 	private AudioSource _audioSource;
 
 	/// <summary>
-	/// Configure the spawner to play a CustomLevelData (JSON). Playhead comes from <paramref name="audioSource"/>.time.
+	/// Configure the spawner to play a Level (JSON). Playhead comes from <paramref name="audioSource"/>.time.
 	/// Call before Start (e.g. from Gameplay.Awake).
 	/// </summary>
-	public void LoadCustomLevel(CustomLevelData level, AudioSource audioSource)
+	public void LoadLevel(Level level, AudioSource audioSource)
 	{
 		_triggerTimes.Clear();
 		_triggerAngles.Clear();

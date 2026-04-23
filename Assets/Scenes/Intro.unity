@@ -830,7 +830,6 @@ MonoBehaviour:
   _logoDuration: 2
   _logoStartScale: 0.8
   _logoEndScale: 1
-  _songLibrary: {fileID: 11400000, guid: 43c4e1283c7526e4ba60aea3e10a3ddd, type: 2}
   _musicClip: {fileID: 8300000, guid: 747011fdef8fe4c43981f05f04ea03c3, type: 3}
   _musicVolume: 0.7
   _musicBPM: 109
@@ -912,6 +911,7 @@ MonoBehaviour:
   _buttonAppearStagger: 0.12
   _buttonStartScale: 0.6
   _gameplaySceneName: LevelSelect
+  _levelEditorSceneName: LevelEditor
   _faderPrefab: {fileID: 100105, guid: c1c2c3d4e5f6789012345678901234cd, type: 3}
   _quitFadeDuration: 1
 --- !u!1660057539 &9223372036854775807

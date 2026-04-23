@@ -1,0 +1,12 @@
+{
+    "Version": 1,
+    "SongId": "Browser History",
+    "Title": "Browser History",
+    "Artist": "Graham Kartna",
+    "BPM": 105,
+    "Difficulty": 5,
+    "AccentColor": { "r": 0.475, "g": 0.698, "b": 0.675, "a": 1 },
+    "PreviewStartTime": 31,
+    "NoteTravelDuration": 1.5,
+    "Notes": []
+}

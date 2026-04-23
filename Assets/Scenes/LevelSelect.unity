@@ -1511,7 +1511,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c552c4050872f7443a0264bcaaad808c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _library: {fileID: 11400000, guid: 43c4e1283c7526e4ba60aea3e10a3ddd, type: 2}
   _gameplaySceneName: Gameplay
   _introSceneName: Intro
   _faderPrefab: {fileID: 100105, guid: c1c2c3d4e5f6789012345678901234cd, type: 3}
