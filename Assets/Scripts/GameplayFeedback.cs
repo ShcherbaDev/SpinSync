@@ -51,6 +51,21 @@ public class GameplayFeedback : MonoBehaviour
 	[SerializeField] private float _comboResetShrinkScale = 0.8f;
 	[SerializeField, Min(0f)] private float _comboResetDuration = 0.2f;
 
+	[Header("Grade Text")]
+	[SerializeField, Tooltip("World-space TextMeshPro prefab spawned at the hit/miss location")]
+	private TextMeshPro _gradeTextPrefab;
+	[SerializeField] private string _perfectLabel = "Perfect";
+	[SerializeField] private string _goodLabel = "Good";
+	[SerializeField] private string _badLabel = "Bad";
+	[SerializeField] private string _missLabel = "Miss";
+	[SerializeField] private Color _perfectOutlineColor = new Color(0.2f, 0.5f, 1f, 1f);
+	[SerializeField] private Color _goodOutlineColor = new Color(0.2f, 0.85f, 0.3f, 1f);
+	[SerializeField] private Color _badOutlineColor = new Color(0.55f, 0.32f, 0.08f, 1f);
+	[SerializeField] private Color _missOutlineColor = Color.red;
+	[SerializeField, Min(0f)] private float _gradeTextDuration = 1f;
+	[SerializeField] private float _gradeTextRiseDistance = 0.8f;
+	[SerializeField, Range(0f, 1f)] private float _gradeTextOutlineWidth = 0.25f;
+
 	[Header("Health Bar")]
 	[SerializeField] private RectTransform _healthBarContainer;
 	[SerializeField, Tooltip("Used to identify which health icon is a lost life so it can be flashed")]
@@ -92,12 +107,14 @@ public class GameplayFeedback : MonoBehaviour
 	{
 		SpawnSpark(worldPos, grade, comboColor);
 		PunchPlatform(grade);
+		ShowGradeText(worldPos, grade);
 	}
 
-	public void PlayMiss()
+	public void PlayMiss(Vector3 worldPos)
 	{
 		FlashPlatformRed();
 		ShakePlatform();
+		ShowGradeText(worldPos, NoteGrade.Miss);
 	}
 
 	public void OnScoreChanged()
@@ -259,6 +276,51 @@ public class GameplayFeedback : MonoBehaviour
 				return;
 			}
 		}
+	}
+
+	private void ShowGradeText(Vector3 worldPos, NoteGrade grade)
+	{
+		if (!_gradeTextPrefab) return;
+
+		TextMeshPro text = Instantiate(_gradeTextPrefab, worldPos, Quaternion.identity);
+		text.text = GradeLabel(grade);
+
+		text.fontMaterial = new Material(text.fontSharedMaterial);
+		text.outlineColor = GradeOutlineColor(grade);
+		text.outlineWidth = _gradeTextOutlineWidth;
+
+		text.alpha = 0f;
+
+		Vector3 endPos = worldPos + Vector3.up * _gradeTextRiseDistance;
+
+		Sequence seq = DOTween.Sequence();
+		seq.Insert(0f, text.transform.DOMove(endPos, _gradeTextDuration).SetEase(Ease.OutCubic));
+		seq.Insert(0f, DOTween.To(() => text.alpha, v => text.alpha = v, 1f, _gradeTextDuration * 0.15f));
+		seq.Insert(_gradeTextDuration * 0.7f, DOTween.To(() => text.alpha, v => text.alpha = v, 0f, _gradeTextDuration * 0.3f));
+		seq.OnComplete(() => Destroy(text.gameObject));
+		seq.SetLink(text.gameObject);
+	}
+
+	private string GradeLabel(NoteGrade grade)
+	{
+		return grade switch
+		{
+			NoteGrade.Perfect => _perfectLabel,
+			NoteGrade.Good => _goodLabel,
+			NoteGrade.Bad => _badLabel,
+			_ => _missLabel
+		};
+	}
+
+	private Color GradeOutlineColor(NoteGrade grade)
+	{
+		return grade switch
+		{
+			NoteGrade.Perfect => _perfectOutlineColor,
+			NoteGrade.Good => _goodOutlineColor,
+			NoteGrade.Bad => _badOutlineColor,
+			_ => _missOutlineColor
+		};
 	}
 
 	private void OnDestroy()

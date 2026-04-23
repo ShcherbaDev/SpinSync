@@ -108,7 +108,7 @@ public class Gameplay : MonoBehaviour
 
 			if (_feedback)
 			{
-				_feedback.PlayMiss();
+				_feedback.PlayMiss(notePosition);
 				_feedback.OnComboReset();
 				_feedback.OnLifeLost();
 			}

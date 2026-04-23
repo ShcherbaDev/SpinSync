@@ -978,6 +978,18 @@ MonoBehaviour:
   _comboResetColor: {r: 1, g: 0, b: 0, a: 1}
   _comboResetShrinkScale: 0.8
   _comboResetDuration: 0.2
+  _gradeTextPrefab: {fileID: 8897788731531789623, guid: 7705bdacfb1d8934bbf3b7b93816d0a6, type: 3}
+  _perfectLabel: Perfect
+  _goodLabel: Good
+  _badLabel: Bad
+  _missLabel: Miss
+  _perfectOutlineColor: {r: 0.2, g: 0.5, b: 1, a: 1}
+  _goodOutlineColor: {r: 0.2, g: 0.85, b: 0.3, a: 1}
+  _badOutlineColor: {r: 0.55, g: 0.32, b: 0.08, a: 1}
+  _missOutlineColor: {r: 1, g: 0, b: 0, a: 1}
+  _gradeTextDuration: 0.5
+  _gradeTextRiseDistance: 0.4
+  _gradeTextOutlineWidth: 0.2
   _healthBarContainer: {fileID: 837211377}
   _lostLifeSprite: {fileID: 21300000, guid: 832c90a74f7041249bbdac9ba7edffc4, type: 3}
   _healthShakeDuration: 0.3
@@ -1510,7 +1522,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -220.5724, y: 42.90027}
+  m_AnchoredPosition: {x: -220.5724, y: 45.46}
   m_SizeDelta: {x: 58.8552, y: 58.8552}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &590304073
@@ -1538,7 +1550,7 @@ MonoBehaviour:
   m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
-  m_FillAmount: 0.876
+  m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 2
   m_UseSpriteMesh: 0
