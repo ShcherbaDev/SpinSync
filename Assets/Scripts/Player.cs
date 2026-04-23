@@ -26,6 +26,13 @@ public class Player : MonoBehaviour
 	[SerializeField]
 	private bool _isInverted = true;
 
+	[Header("Behavior")]
+	[SerializeField, Tooltip("Disable to use this Player for rotation-only (e.g. Level Editor). When false, key presses do not trigger note hit detection.")]
+	private bool _enableHitDetection = true;
+
+	[SerializeField, Tooltip("Disable in scenes that need a visible cursor for UI interaction (e.g. Level Editor).")]
+	private bool _lockCursor = true;
+
 	private InputSystem_Actions _inputActions;
 
 	/// <summary>
@@ -38,6 +45,17 @@ public class Player : MonoBehaviour
 	public float Radius
 	{
 		get { return _radius; }
+	}
+
+	public Transform PivotTransform
+	{
+		get { return _pivotTransform; }
+	}
+
+	public bool EnableHitDetection
+	{
+		get { return _enableHitDetection; }
+		set { _enableHitDetection = value; }
 	}
 
 	private void CalculateHalfAngularWidth()
@@ -131,8 +149,11 @@ public class Player : MonoBehaviour
 
 	private void Start()
 	{
-		Cursor.visible = false;
-		Cursor.lockState = CursorLockMode.Locked;
+		if (_lockCursor)
+		{
+			Cursor.visible = false;
+			Cursor.lockState = CursorLockMode.Locked;
+		}
 
 		CalculateHalfAngularWidth();
 	}
@@ -140,6 +161,8 @@ public class Player : MonoBehaviour
 	private void Update()
 	{
 		RotateByUserInput();
-		HandleNotePress();
+
+		if (_enableHitDetection)
+			HandleNotePress();
 	}
 }

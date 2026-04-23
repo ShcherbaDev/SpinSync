@@ -53,6 +53,7 @@ public class IntroAnimationSequence : MonoBehaviour
 
 	[Header("Scene Loading")]
 	[SerializeField] private string _gameplaySceneName = "Gameplay";
+	[SerializeField] private string _levelEditorSceneName = "LevelEditor";
 
 	[Header("Scene Transition")]
 	[SerializeField] private ScreenFader _faderPrefab;
@@ -179,10 +180,12 @@ public class IntroAnimationSequence : MonoBehaviour
 		float step = buttonHeight + _buttonSpacing;
 
 		Button play = SpawnButton("Play", _buttonsTopOffsetY, LoadGameplay);
-		Button quit = SpawnButton("Quit", _buttonsTopOffsetY - step, QuitGame);
+		Button editor = SpawnButton("Level Editor", _buttonsTopOffsetY - step, LoadLevelEditor);
+		Button quit = SpawnButton("Quit", _buttonsTopOffsetY - step * 2f, QuitGame);
 
 		AnimateButtonAppear((RectTransform)play.transform, 0f);
-		AnimateButtonAppear((RectTransform)quit.transform, _buttonAppearStagger);
+		AnimateButtonAppear((RectTransform)editor.transform, _buttonAppearStagger);
+		AnimateButtonAppear((RectTransform)quit.transform, _buttonAppearStagger * 2f);
 	}
 
 	private Button SpawnButton(string label, float yPosition, UnityEngine.Events.UnityAction onClick)
@@ -218,6 +221,11 @@ public class IntroAnimationSequence : MonoBehaviour
 	private void LoadGameplay()
 	{
 		SceneManager.LoadScene(_gameplaySceneName);
+	}
+
+	private void LoadLevelEditor()
+	{
+		SceneManager.LoadScene(_levelEditorSceneName);
 	}
 
 	private void QuitGame()

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SpinSync.EditorRuntime;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
@@ -15,6 +16,7 @@ public partial class NoteSpawner : MonoBehaviour
 	public System.Action<Note> OnNoteSpawned;
 
 	private List<NoteMarker> _pendingMarkers = new List<NoteMarker>();
+	private List<float> _pendingTriggerTimes = new List<float>();
 	private int _nextMarkerIndex;
 
 	partial void OnEditorDisable();
@@ -23,6 +25,7 @@ public partial class NoteSpawner : MonoBehaviour
 	private void Start()
 	{
 		_pendingMarkers.Clear();
+		_pendingTriggerTimes.Clear();
 		_nextMarkerIndex = 0;
 
 		TimelineAsset timeline = _director?.playableAsset as TimelineAsset;
@@ -36,6 +39,10 @@ public partial class NoteSpawner : MonoBehaviour
 		}
 
 		_pendingMarkers.Sort((a, b) => a.time.CompareTo(b.time));
+
+		_pendingTriggerTimes.Capacity = _pendingMarkers.Count;
+		foreach (NoteMarker m in _pendingMarkers)
+			_pendingTriggerTimes.Add((float)m.time);
 	}
 
 	private void Update()
@@ -60,17 +67,11 @@ public partial class NoteSpawner : MonoBehaviour
 
 	private void UpdatePlayMode()
 	{
-		while (_nextMarkerIndex < _pendingMarkers.Count)
-		{
-			NoteMarker marker = _pendingMarkers[_nextMarkerIndex];
-
-			if ((float)_director.time >= (float)marker.time - _noteTravelDuration)
-			{
-				SpawnNote(marker.Angle);
-				_nextMarkerIndex++;
-			}
-			else
-				break;
-		}
+		_nextMarkerIndex = NoteScheduler.AdvancePending(
+			_pendingTriggerTimes,
+			_nextMarkerIndex,
+			(float)_director.time,
+			_noteTravelDuration,
+			i => SpawnNote(_pendingMarkers[i].Angle));
 	}
 }
