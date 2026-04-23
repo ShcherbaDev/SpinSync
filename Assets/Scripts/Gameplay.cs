@@ -9,6 +9,12 @@ public class NoteGradeToScoreMapping
 {
 	public NoteGrade Grade;
 	public int Score;
+
+	[Tooltip("Lower bound of the note's Progress (0..1+) to earn this grade. Ignored for Miss.")]
+	public float MinProgress;
+
+	[Tooltip("Upper bound of the note's Progress (0..1+) to earn this grade. Ignored for Miss.")]
+	public float MaxProgress;
 }
 
 public class Gameplay : MonoBehaviour
@@ -89,6 +95,7 @@ public class Gameplay : MonoBehaviour
 	{
 		note.OnNoteFinished += ProcessNoteResult;
 		note.SetComboVisuals(_currentComboColor);
+		note.SetGradeWindows(_gradeToScoreMapping);
 	}
 
 	private void ProcessNoteResult(Note note, NoteGrade grade)

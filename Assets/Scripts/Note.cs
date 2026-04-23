@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -8,6 +9,8 @@ public enum NoteGrade
 
 public class Note : MonoBehaviour
 {
+	private const float AutoMissBuffer = 0.1f;
+
 	[SerializeField] private float _spawnTime;
 	[SerializeField] private float _travelDuration;
 	[SerializeField] private float _targetRadius;
@@ -15,6 +18,9 @@ public class Note : MonoBehaviour
 
 	[SerializeField] private SpriteRenderer _outlineSpriteRenderer;
 	[SerializeField] private SpriteRenderer _backgroundSpriteRenderer;
+
+	private List<NoteGradeToScoreMapping> _gradeWindows;
+	private float _autoMissProgress = 1.2f;
 
 	public System.Action<Note, NoteGrade> OnNoteFinished;
 
@@ -48,16 +54,34 @@ public class Note : MonoBehaviour
 			_backgroundSpriteRenderer.color = color;
 	}
 
+	public void SetGradeWindows(List<NoteGradeToScoreMapping> windows)
+	{
+		_gradeWindows = windows;
+
+		float maxProgress = 0f;
+		if (windows != null)
+		{
+			foreach (NoteGradeToScoreMapping m in windows)
+			{
+				if (m.Grade == NoteGrade.Miss) continue;
+				if (m.MaxProgress > maxProgress) maxProgress = m.MaxProgress;
+			}
+		}
+		_autoMissProgress = maxProgress > 0f ? maxProgress + AutoMissBuffer : 1.2f;
+	}
+
 	public NoteGrade RateHit()
 	{
-		return Progress switch
+		if (_gradeWindows == null) return NoteGrade.Miss;
+
+		float progress = Progress;
+		foreach (NoteGradeToScoreMapping m in _gradeWindows)
 		{
-			< 0.6f => NoteGrade.Miss,
-			<= 0.7f => NoteGrade.Bad,
-			<= 0.85f => NoteGrade.Good,
-			<= 1.1f => NoteGrade.Perfect,
-			_ => NoteGrade.Miss
-		};
+			if (m.Grade == NoteGrade.Miss) continue;
+			if (progress >= m.MinProgress && progress <= m.MaxProgress)
+				return m.Grade;
+		}
+		return NoteGrade.Miss;
 	}
 
 	private void Update()
@@ -68,7 +92,7 @@ public class Note : MonoBehaviour
 		SetSpriteAlpha(_outlineSpriteRenderer, Progress);
 		SetSpriteAlpha(_backgroundSpriteRenderer, Progress);
 
-		if (Progress >= 1.2f)
+		if (Progress >= _autoMissProgress)
 		{
 			OnNoteFinished?.Invoke(this, NoteGrade.Miss);
 			Destroy(gameObject);

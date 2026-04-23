@@ -929,12 +929,20 @@ MonoBehaviour:
   _gradeToScoreMapping:
   - Grade: 0
     Score: 0
+    MinProgress: 0
+    MaxProgress: 0
   - Grade: 1
     Score: 50
+    MinProgress: 0.8
+    MaxProgress: 0.9
   - Grade: 2
     Score: 100
+    MinProgress: 0.9
+    MaxProgress: 0.95
   - Grade: 3
     Score: 300
+    MinProgress: 0.95
+    MaxProgress: 1.1
   _currentScore: 0
 --- !u!114 &508679104
 MonoBehaviour:
