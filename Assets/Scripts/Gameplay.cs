@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using SpinSync.EditorRuntime;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 [System.Serializable]
@@ -60,6 +61,16 @@ public class Gameplay : MonoBehaviour
 	[Header("Scoring")]
 	[SerializeField] private List<NoteGradeToScoreMapping> _gradeToScoreMapping;
 	[SerializeField] private int _currentScore;
+
+	[Header("Completion")]
+	[SerializeField, Tooltip("Seconds to wait after the last note has resolved before loading the Results scene.")]
+	private float _completionDelaySeconds = 3f;
+	[SerializeField] private string _resultsSceneName = "Results";
+
+	private int _bestCombo;
+	private int _perfectCount, _goodCount, _badCount, _missCount;
+	private int _notesResolved;
+	private bool _completionTriggered;
 
 	private void Awake()
 	{
@@ -149,6 +160,7 @@ public class Gameplay : MonoBehaviour
 		else
 		{
 			_currentCombo++;
+			if (_currentCombo > _bestCombo) _bestCombo = _currentCombo;
 			_sfxAudioSource.PlayOneShot(_hitSound);
 
 			if (_feedback)
@@ -157,6 +169,15 @@ public class Gameplay : MonoBehaviour
 				_feedback.OnComboIncreased(_currentComboColor);
 			}
 		}
+
+		switch (grade)
+		{
+			case NoteGrade.Perfect: _perfectCount++; break;
+			case NoteGrade.Good: _goodCount++; break;
+			case NoteGrade.Bad: _badCount++; break;
+			case NoteGrade.Miss: _missCount++; break;
+		}
+		_notesResolved++;
 
 		_currentScore += _gradeToScoreMapping.Find(item => item.Grade == grade).Score;
 		UpdateScoreText();
@@ -175,6 +196,40 @@ public class Gameplay : MonoBehaviour
 	private void Update()
 	{
 		UpdateProgress();
+		CheckSongCompletion();
+	}
+
+	private void CheckSongCompletion()
+	{
+		if (_completionTriggered) return;
+		if (_noteSpawner == null || !_noteSpawner.IsAllSpawned) return;
+		if (_notesResolved < _noteSpawner.TotalNotes) return;
+
+		_completionTriggered = true;
+		StartCoroutine(CompleteAfterDelay());
+	}
+
+	private IEnumerator CompleteAfterDelay()
+	{
+		yield return new WaitForSeconds(_completionDelaySeconds);
+		GoToResults();
+	}
+
+	private void GoToResults()
+	{
+		Level level = SongSelection.Current;
+		ResultsData.HasResults = true;
+		ResultsData.SongTitle = level != null ? level.Title : "";
+		ResultsData.SongArtist = level != null ? level.Artist : "";
+		ResultsData.TotalScore = _currentScore;
+		ResultsData.BestCombo = _bestCombo;
+		ResultsData.PerfectCount = _perfectCount;
+		ResultsData.GoodCount = _goodCount;
+		ResultsData.BadCount = _badCount;
+		ResultsData.MissCount = _missCount;
+
+		if (_musicAudioSource != null) _musicAudioSource.Stop();
+		SceneManager.LoadScene(_resultsSceneName);
 	}
 
 	private void UpdateProgress()

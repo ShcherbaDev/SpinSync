@@ -47,6 +47,12 @@ public class NoteSpawner : MonoBehaviour
 		_noteTravelDuration = Mathf.Max(0.01f, seconds);
 	}
 
+	/// <summary>Total notes loaded for the current level.</summary>
+	public int TotalNotes { get { return _triggerTimes.Count; } }
+
+	/// <summary>True once every queued note has been spawned (no more notes are coming).</summary>
+	public bool IsAllSpawned { get { return _nextIndex >= _triggerTimes.Count; } }
+
 	private void Update()
 	{
 		if (!Application.isPlaying || _audioSource == null) return;
