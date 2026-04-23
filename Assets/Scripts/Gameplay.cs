@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using SpinSync.EditorRuntime;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Playables;
 using UnityEngine.UI;
 
 [System.Serializable]
@@ -19,11 +19,11 @@ public class NoteGradeToScoreMapping
 
 public class Gameplay : MonoBehaviour
 {
-	[SerializeField] private PlayableDirector _director;
-
 	[SerializeField] private Player _player;
 	[SerializeField] private NoteSpawner _noteSpawner;
 	[SerializeField] private AudioSource _sfxAudioSource;
+	[SerializeField, Tooltip("AudioSource that plays the song clip and drives the playhead.")]
+	private AudioSource _musicAudioSource;
 	[SerializeField] private GameplayFeedback _feedback;
 	[SerializeField] private GameOverScreen _gameOverScreen;
 	[SerializeField] private PauseMenu _pauseMenu;
@@ -62,9 +62,24 @@ public class Gameplay : MonoBehaviour
 
 	private void Awake()
 	{
-		// Must run before NoteSpawner.Start, which caches markers from _director.playableAsset.
-		if (SongSelection.Current != null && SongSelection.Current.Timeline != null)
-			_director.playableAsset = SongSelection.Current.Timeline;
+		LevelData song = SongSelection.Current;
+		if (song == null)
+		{
+			Debug.LogWarning("[Gameplay] No SongSelection.Current set; nothing to play.");
+			return;
+		}
+
+		CustomLevelData level = CustomLevelStorage.Load(song.name);
+		if (level == null)
+			Debug.LogWarning($"[Gameplay] No custom JSON level found for '{song.name}'. The song will play with no notes. Create one in the Level Editor.");
+
+		if (_musicAudioSource != null)
+		{
+			_musicAudioSource.clip = song.Song;
+			_musicAudioSource.time = 0f;
+		}
+		_noteSpawner.SetNoteTravelDuration(song.NoteTravelDuration);
+		_noteSpawner.LoadCustomLevel(level, _musicAudioSource);
 	}
 
 	private void Start()
@@ -77,7 +92,7 @@ public class Gameplay : MonoBehaviour
 		if (SongSelection.Current != null)
 			Debug.Log($"Gameplay starting with selected song: {SongSelection.Current.Title} by {SongSelection.Current.Artist}");
 
-		_director.Play();
+		if (_musicAudioSource != null) _musicAudioSource.Play();
 	}
 
 	private void OnEnable()
@@ -154,9 +169,11 @@ public class Gameplay : MonoBehaviour
 
 	private void UpdateProgress()
 	{
-		if (!_director || _director.duration <= 0) return;
+		if (_musicAudioSource == null || _musicAudioSource.clip == null) return;
+		float duration = _musicAudioSource.clip.length;
+		if (duration <= 0) return;
 
-		float progress = Mathf.Clamp01((float)(_director.time / _director.duration));
+		float progress = Mathf.Clamp01(_musicAudioSource.time / duration);
 
 		if (_progressFillImage)
 			_progressFillImage.fillAmount = progress;
@@ -167,8 +184,7 @@ public class Gameplay : MonoBehaviour
 
 	private void TriggerGameOver()
 	{
-		if (_director)
-			_director.Pause();
+		if (_musicAudioSource != null) _musicAudioSource.Pause();
 
 		if (_player)
 			_player.enabled = false;
@@ -185,20 +201,14 @@ public class Gameplay : MonoBehaviour
 
 	public void PauseGameplay()
 	{
-		if (_director)
-			_director.Pause();
-
-		if (_player)
-			_player.enabled = false;
+		if (_musicAudioSource != null) _musicAudioSource.Pause();
+		if (_player) _player.enabled = false;
 	}
 
 	public void ResumeGameplay()
 	{
-		if (_director)
-			_director.Resume();
-
-		if (_player)
-			_player.enabled = true;
+		if (_musicAudioSource != null) _musicAudioSource.UnPause();
+		if (_player) _player.enabled = true;
 	}
 
 	private void UpdateScoreText()

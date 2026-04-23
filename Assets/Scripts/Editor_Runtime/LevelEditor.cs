@@ -18,6 +18,7 @@ namespace SpinSync.EditorRuntime
 	{
 		private const string LatencyPrefsKey = "SpinSync.EditorLatencyMs";
 		private const string IntroSceneName = "Intro";
+		private const string GameplaySceneName = "Gameplay";
 
 		[Header("References")]
 		[SerializeField] private AudioSource _audioSource;
@@ -155,6 +156,14 @@ namespace SpinSync.EditorRuntime
 		{
 			Keyboard kb = Keyboard.current;
 			if (kb == null) return;
+
+			// In Test mode, ESC reveals the cursor so the user can click UI (e.g. Stop Test) to leave.
+			if (_mode == EditorMode.Test && kb.escapeKey.wasPressedThisFrame)
+			{
+				Cursor.visible = true;
+				Cursor.lockState = CursorLockMode.None;
+				return;
+			}
 
 			bool ctrl = kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed;
 
@@ -363,6 +372,9 @@ namespace SpinSync.EditorRuntime
 			if (_player != null)
 				_player.EnableHitDetection = true;
 
+			Cursor.visible = false;
+			Cursor.lockState = CursorLockMode.Locked;
+
 			if (_spawner != null)
 			{
 				_spawner.ClearEditPreview();
@@ -393,6 +405,9 @@ namespace SpinSync.EditorRuntime
 			if (_player != null)
 				_player.EnableHitDetection = false;
 
+			Cursor.visible = true;
+			Cursor.lockState = CursorLockMode.None;
+
 			if (_spawner != null)
 				_spawner.EndTest();
 
@@ -406,6 +421,24 @@ namespace SpinSync.EditorRuntime
 		public void BackToMenu()
 		{
 			SceneManager.LoadScene(IntroSceneName);
+		}
+
+		/// <summary>
+		/// Save the current JSON level and jump to the Gameplay scene to play it (bypassing Timeline).
+		/// </summary>
+		public void PlayCustomInGameplay()
+		{
+			if (_selectedSong == null || _editingLevel == null)
+			{
+				Debug.LogWarning("[LevelEditor] Cannot Play Custom: no song/level loaded.");
+				return;
+			}
+
+			SaveCurrent();
+
+			SongSelection.Current = _selectedSong;
+
+			SceneManager.LoadScene(GameplaySceneName);
 		}
 
 		// ---- Helpers ----

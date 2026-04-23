@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Timeline;
 
 [CreateAssetMenu(fileName = "LevelData", menuName = "Level Data")]
 public class LevelData : ScriptableObject
@@ -23,8 +22,5 @@ public class LevelData : ScriptableObject
 	public float PreviewStartTime;
 
 	[Header("Gameplay")]
-	[Tooltip("Timeline containing the note markers + audio track for this song. Bound to the Gameplay scene's PlayableDirector at runtime.")]
-	public TimelineAsset Timeline;
-
 	public float NoteTravelDuration = 0.5f;
 }

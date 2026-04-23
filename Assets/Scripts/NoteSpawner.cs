@@ -1,61 +1,62 @@
 using System.Collections.Generic;
 using SpinSync.EditorRuntime;
 using UnityEngine;
-using UnityEngine.Playables;
-using UnityEngine.Timeline;
 
-[ExecuteAlways]
-public partial class NoteSpawner : MonoBehaviour
+public class NoteSpawner : MonoBehaviour
 {
 	[Header("Settings")]
 	[SerializeField] private Note _notePrefab;
 	[SerializeField] private Player _player;
-	[SerializeField] private PlayableDirector _director;
 	[SerializeField] private float _noteTravelDuration = 0.5f;
 
 	public System.Action<Note> OnNoteSpawned;
 
-	private List<NoteMarker> _pendingMarkers = new List<NoteMarker>();
-	private List<float> _pendingTriggerTimes = new List<float>();
-	private int _nextMarkerIndex;
+	private readonly List<float> _triggerTimes = new List<float>();
+	private readonly List<float> _triggerAngles = new List<float>();
+	private int _nextIndex;
 
-	partial void OnEditorDisable();
-	partial void UpdateEditModePreview();
+	private AudioSource _audioSource;
 
-	private void Start()
+	/// <summary>
+	/// Configure the spawner to play a CustomLevelData (JSON). Playhead comes from <paramref name="audioSource"/>.time.
+	/// Call before Start (e.g. from Gameplay.Awake).
+	/// </summary>
+	public void LoadCustomLevel(CustomLevelData level, AudioSource audioSource)
 	{
-		_pendingMarkers.Clear();
-		_pendingTriggerTimes.Clear();
-		_nextMarkerIndex = 0;
+		_triggerTimes.Clear();
+		_triggerAngles.Clear();
+		_nextIndex = 0;
+		_audioSource = audioSource;
 
-		TimelineAsset timeline = _director?.playableAsset as TimelineAsset;
-		if (timeline == null)
-			return;
+		if (level == null || level.Notes == null) return;
 
-		foreach (IMarker marker in timeline.markerTrack.GetMarkers())
+		List<CustomNote> sorted = new List<CustomNote>(level.Notes);
+		sorted.Sort((a, b) => a.Time.CompareTo(b.Time));
+
+		_triggerTimes.Capacity = sorted.Count;
+		_triggerAngles.Capacity = sorted.Count;
+		for (int i = 0; i < sorted.Count; i++)
 		{
-			if (marker is NoteMarker noteMarker)
-				_pendingMarkers.Add(noteMarker);
+			_triggerTimes.Add(sorted[i].Time);
+			_triggerAngles.Add(sorted[i].Angle);
 		}
+	}
 
-		_pendingMarkers.Sort((a, b) => a.time.CompareTo(b.time));
-
-		_pendingTriggerTimes.Capacity = _pendingMarkers.Count;
-		foreach (NoteMarker m in _pendingMarkers)
-			_pendingTriggerTimes.Add((float)m.time);
+	public void SetNoteTravelDuration(float seconds)
+	{
+		_noteTravelDuration = Mathf.Max(0.01f, seconds);
 	}
 
 	private void Update()
 	{
-		if (Application.isPlaying)
-			UpdatePlayMode();
-		else
-			UpdateEditModePreview();
-	}
+		if (!Application.isPlaying || _audioSource == null) return;
 
-	private void OnDisable()
-	{
-		OnEditorDisable();
+		_nextIndex = NoteScheduler.AdvancePending(
+			_triggerTimes,
+			_nextIndex,
+			_audioSource.time,
+			_noteTravelDuration,
+			i => SpawnNote(_triggerAngles[i]));
 	}
 
 	private void SpawnNote(float angle)
@@ -63,15 +64,5 @@ public partial class NoteSpawner : MonoBehaviour
 		Note newNote = Instantiate(_notePrefab, Vector3.zero, Quaternion.identity);
 		newNote.Init(_noteTravelDuration, _player.Radius, angle);
 		OnNoteSpawned?.Invoke(newNote);
-	}
-
-	private void UpdatePlayMode()
-	{
-		_nextMarkerIndex = NoteScheduler.AdvancePending(
-			_pendingTriggerTimes,
-			_nextMarkerIndex,
-			(float)_director.time,
-			_noteTravelDuration,
-			i => SpawnNote(_pendingMarkers[i].Angle));
 	}
 }

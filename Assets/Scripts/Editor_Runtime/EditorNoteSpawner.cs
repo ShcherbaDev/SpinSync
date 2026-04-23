@@ -24,6 +24,10 @@ namespace SpinSync.EditorRuntime
 		[SerializeField, Min(0f), Tooltip("How long after a note's time the ghost lingers (seconds).")]
 		private float _ghostLinger = 0.2f;
 
+		[Header("Test-mode Grade Windows")]
+		[SerializeField, Tooltip("Progress-based grade windows applied to spawned notes in Test mode. Should mirror Gameplay._gradeToScoreMapping so test hits score identically.")]
+		private List<NoteGradeToScoreMapping> _gradeWindows = new List<NoteGradeToScoreMapping>();
+
 		public System.Action<Note> OnNoteSpawned;
 
 		public float NoteTravelDuration
@@ -184,6 +188,8 @@ namespace SpinSync.EditorRuntime
 
 			Note newNote = Instantiate(_notePrefab, Vector3.zero, Quaternion.identity);
 			newNote.Init(_noteTravelDuration, _player.Radius, angle);
+			if (_gradeWindows != null && _gradeWindows.Count > 0)
+				newNote.SetGradeWindows(_gradeWindows);
 			OnNoteSpawned?.Invoke(newNote);
 		}
 

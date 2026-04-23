@@ -13,6 +13,7 @@ namespace SpinSync.EditorRuntime.UI
 		[SerializeField] private TextMeshProUGUI _saveButtonLabel;
 		[SerializeField] private Button _testButton;
 		[SerializeField] private TextMeshProUGUI _testButtonLabel;
+		[SerializeField] private Button _playCustomButton;
 		[SerializeField] private Button _backButton;
 
 		[Header("Latency")]
@@ -37,6 +38,7 @@ namespace SpinSync.EditorRuntime.UI
 		{
 			if (_saveButton != null) _saveButton.onClick.AddListener(_editor.SaveCurrent);
 			if (_testButton != null) _testButton.onClick.AddListener(ToggleTestMode);
+			if (_playCustomButton != null) _playCustomButton.onClick.AddListener(_editor.PlayCustomInGameplay);
 			if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
 
 			if (_latencySlider != null)
@@ -79,6 +81,7 @@ namespace SpinSync.EditorRuntime.UI
 		{
 			if (_saveButton != null) _saveButton.onClick.RemoveListener(_editor.SaveCurrent);
 			if (_testButton != null) _testButton.onClick.RemoveListener(ToggleTestMode);
+			if (_playCustomButton != null) _playCustomButton.onClick.RemoveListener(_editor.PlayCustomInGameplay);
 			if (_backButton != null) _backButton.onClick.RemoveListener(OnBackClicked);
 			if (_latencySlider != null) _latencySlider.onValueChanged.RemoveListener(OnLatencyChanged);
 			if (_snapToggle != null) _snapToggle.onValueChanged.RemoveListener(OnSnapToggled);
