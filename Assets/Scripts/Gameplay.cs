@@ -19,6 +19,7 @@ public class Gameplay : MonoBehaviour
 	[SerializeField] private NoteSpawner _noteSpawner;
 	[SerializeField] private AudioSource _sfxAudioSource;
 	[SerializeField] private GameplayFeedback _feedback;
+	[SerializeField] private GameOverScreen _gameOverScreen;
 
 	[Header("UI Texts")]
 	[SerializeField] private TextMeshProUGUI _scoreText;
@@ -129,8 +130,23 @@ public class Gameplay : MonoBehaviour
 		if (_currentLives <= 0)
 		{
 			Debug.Log("Game Over");
-			Application.Quit();
+			TriggerGameOver();
 		}
+	}
+
+	private void TriggerGameOver()
+	{
+		if (_director)
+			_director.Pause();
+
+		if (_player)
+			_player.enabled = false;
+
+		foreach (Note note in FindObjectsByType<Note>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+			Destroy(note.gameObject);
+
+		if (_gameOverScreen)
+			_gameOverScreen.Show();
 	}
 
 	private void UpdateScoreText()

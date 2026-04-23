@@ -105,7 +105,8 @@ public class GameplayFeedback : MonoBehaviour
 		if (!_scoreText) return;
 		_scorePunchTween?.Kill(true);
 		_scoreText.localScale = _scoreOriginalScale;
-		_scorePunchTween = _scoreText.DOPunchScale(Vector3.one * _scorePunch, _scorePunchDuration);
+		_scorePunchTween = _scoreText.DOPunchScale(Vector3.one * _scorePunch, _scorePunchDuration)
+			.SetLink(_scoreText.gameObject);
 	}
 
 	public void OnComboIncreased(Color comboColor)
@@ -114,14 +115,16 @@ public class GameplayFeedback : MonoBehaviour
 		{
 			_comboPunchTween?.Kill(true);
 			_comboText.localScale = _comboOriginalScale;
-			_comboPunchTween = _comboText.DOPunchScale(Vector3.one * _comboPunch, _comboPunchDuration);
+			_comboPunchTween = _comboText.DOPunchScale(Vector3.one * _comboPunch, _comboPunchDuration)
+				.SetLink(_comboText.gameObject);
 		}
 
 		if (_comboTextTMP)
 		{
 			_comboColorTween?.Kill();
 			_comboTextTMP.color = comboColor;
-			_comboColorTween = _comboTextTMP.DOColor(_comboTextDefaultColor, _comboColorFlashDuration);
+			_comboColorTween = _comboTextTMP.DOColor(_comboTextDefaultColor, _comboColorFlashDuration)
+				.SetLink(_comboTextTMP.gameObject);
 		}
 	}
 
@@ -135,6 +138,7 @@ public class GameplayFeedback : MonoBehaviour
 			Sequence shrink = DOTween.Sequence();
 			shrink.Append(_comboText.DOScale(_comboOriginalScale * _comboResetShrinkScale, _comboResetDuration * 0.5f));
 			shrink.Append(_comboText.DOScale(_comboOriginalScale, _comboResetDuration * 0.5f));
+			shrink.SetLink(_comboText.gameObject);
 			_comboPunchTween = shrink;
 		}
 
@@ -142,7 +146,8 @@ public class GameplayFeedback : MonoBehaviour
 		{
 			_comboColorTween?.Kill();
 			_comboTextTMP.color = _comboResetColor;
-			_comboColorTween = _comboTextTMP.DOColor(_comboTextDefaultColor, _comboResetDuration);
+			_comboColorTween = _comboTextTMP.DOColor(_comboTextDefaultColor, _comboResetDuration)
+				.SetLink(_comboTextTMP.gameObject);
 		}
 	}
 
@@ -153,9 +158,10 @@ public class GameplayFeedback : MonoBehaviour
 			_healthShakeTween?.Kill(true);
 			_healthBarContainer.anchoredPosition3D = _healthOriginalPos;
 			_healthShakeTween = _healthBarContainer.DOShakeAnchorPos(
-				_healthShakeDuration,
-				new Vector2(_healthShakeStrength, 0f),
-				_healthShakeVibrato);
+					_healthShakeDuration,
+					new Vector2(_healthShakeStrength, 0f),
+					_healthShakeVibrato)
+				.SetLink(_healthBarContainer.gameObject);
 		}
 
 		FlashNewestLostLife();
@@ -202,7 +208,8 @@ public class GameplayFeedback : MonoBehaviour
 
 		_platformPunchTween?.Kill(true);
 		_platformTransform.localScale = _platformOriginalScale;
-		_platformPunchTween = _platformTransform.DOPunchScale(Vector3.one * magnitude, _punchDuration, _punchVibrato, _punchElasticity);
+		_platformPunchTween = _platformTransform.DOPunchScale(Vector3.one * magnitude, _punchDuration, _punchVibrato, _punchElasticity)
+			.SetLink(_platformTransform.gameObject);
 	}
 
 	private void FlashPlatformRed()
@@ -215,6 +222,7 @@ public class GameplayFeedback : MonoBehaviour
 		Sequence flash = DOTween.Sequence();
 		flash.Append(_platformSprite.DOColor(_missFlashColor, _missFlashInDuration));
 		flash.Append(_platformSprite.DOColor(_platformOriginalColor, _missFlashOutDuration));
+		flash.SetLink(_platformSprite.gameObject);
 		_platformColorTween = flash;
 	}
 
@@ -225,9 +233,10 @@ public class GameplayFeedback : MonoBehaviour
 		_platformShakeTween?.Kill(true);
 		_platformTransform.localRotation = Quaternion.Euler(0f, 0f, _platformTransform.localEulerAngles.z);
 		_platformShakeTween = _platformTransform.DOShakeRotation(
-			_missShakeDuration,
-			new Vector3(0f, 0f, _missShakeZStrength),
-			_missShakeVibrato);
+				_missShakeDuration,
+				new Vector3(0f, 0f, _missShakeZStrength),
+				_missShakeVibrato)
+			.SetLink(_platformTransform.gameObject);
 	}
 
 	private void FlashNewestLostLife()
@@ -246,9 +255,21 @@ public class GameplayFeedback : MonoBehaviour
 				Sequence fade = DOTween.Sequence();
 				fade.Append(img.DOColor(_missFlashColor, _lostLifeFlashDuration * 0.4f));
 				fade.Append(img.DOColor(start, _lostLifeFlashDuration * 0.6f));
+				fade.SetLink(img.gameObject, LinkBehaviour.KillOnDestroy);
 				return;
 			}
 		}
+	}
+
+	private void OnDestroy()
+	{
+		_platformColorTween?.Kill();
+		_platformShakeTween?.Kill();
+		_platformPunchTween?.Kill();
+		_scorePunchTween?.Kill();
+		_comboPunchTween?.Kill();
+		_comboColorTween?.Kill();
+		_healthShakeTween?.Kill();
 	}
 
 	private bool IsLostLife(Image img)
