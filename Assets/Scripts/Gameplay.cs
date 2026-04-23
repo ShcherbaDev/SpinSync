@@ -26,6 +26,11 @@ public class Gameplay : MonoBehaviour
 	[SerializeField, Min(1)] private int _maxAmountOfScoreDigits = 7;
 	[SerializeField] private TextMeshProUGUI _comboText;
 
+	[Header("Progress")]
+	[SerializeField, Tooltip("Image with type=Filled, Fill Method=Radial 360")]
+	private Image _progressFillImage;
+	[SerializeField] private TextMeshProUGUI _progressText;
+
 	[Header("Health (UI)")]
 	[SerializeField] private RectTransform _healthBarContainer;
 	[SerializeField] private Color _healthBarItemsColor;
@@ -132,6 +137,24 @@ public class Gameplay : MonoBehaviour
 			Debug.Log("Game Over");
 			TriggerGameOver();
 		}
+	}
+
+	private void Update()
+	{
+		UpdateProgress();
+	}
+
+	private void UpdateProgress()
+	{
+		if (!_director || _director.duration <= 0) return;
+
+		float progress = Mathf.Clamp01((float)(_director.time / _director.duration));
+
+		if (_progressFillImage)
+			_progressFillImage.fillAmount = progress;
+
+		if (_progressText)
+			_progressText.text = $"{Mathf.FloorToInt(progress * 100f)}%";
 	}
 
 	private void TriggerGameOver()
