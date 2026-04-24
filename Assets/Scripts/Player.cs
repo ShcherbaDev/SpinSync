@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
@@ -40,6 +41,8 @@ public class Player : MonoBehaviour
 	/// </summary>
 	private float _cosThreshold;
 
+	private int _pendingPresses;
+
 	public System.Action<Note, NoteGrade> OnHitDetected;
 
 	public float Radius
@@ -72,11 +75,13 @@ public class Player : MonoBehaviour
 		_pivotTransform.Rotate(0f, 0f, finalRotationDelta);
 	}
 
+	private void OnPressPerformed(InputAction.CallbackContext context)
+	{
+		_pendingPresses++;
+	}
+
 	private void HandleNotePress()
 	{
-		if (!_inputActions.Player.Press.WasPressedThisFrame())
-			return;
-
 		Note[] activeNotes = FindObjectsByType<Note>(FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
 		Note closestNote = null;
 		float closestProgressDiff = float.MaxValue;
@@ -140,11 +145,16 @@ public class Player : MonoBehaviour
 	private void OnEnable()
 	{
 		_inputActions?.Enable();
+		if (_inputActions != null)
+			_inputActions.Player.Press.performed += OnPressPerformed;
 	}
 
 	private void OnDisable()
 	{
+		if (_inputActions != null)
+			_inputActions.Player.Press.performed -= OnPressPerformed;
 		_inputActions?.Disable();
+		_pendingPresses = 0;
 	}
 
 	private void Start()
@@ -163,6 +173,16 @@ public class Player : MonoBehaviour
 		RotateByUserInput();
 
 		if (_enableHitDetection)
-			HandleNotePress();
+		{
+			while (_pendingPresses > 0)
+			{
+				_pendingPresses--;
+				HandleNotePress();
+			}
+		}
+		else
+		{
+			_pendingPresses = 0;
+		}
 	}
 }
